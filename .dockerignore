@@ -1,0 +1,12 @@
+.git
+.gitignore
+.vscode
+.idea
+node_modules
+dist
+backend/node_modules
+backend/dist
+backend/prisma/dev.db
+backend/prisma/dev.db-journal
+*.log
+deploy/*.log

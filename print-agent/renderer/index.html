@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <title>Barracão Gourmet - Impressora</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <header>
+    <h1>🍷 Barracão Gourmet</h1>
+    <p class="subtitulo">Agente de impressão automática de pedidos</p>
+  </header>
+
+  <section class="status-box" id="statusBox">
+    <span class="status-bolinha" id="statusBolinha"></span>
+    <div>
+      <p id="statusTexto">Verificando...</p>
+      <p class="status-detalhe" id="statusDetalhe"></p>
+    </div>
+  </section>
+
+  <form id="formConfig">
+    <label>URL do servidor</label>
+    <input type="text" id="backendUrl" placeholder="https://api.barracaogourmet.com.br" />
+
+    <label>E-mail de acesso</label>
+    <input type="email" id="email" />
+
+    <label>Senha</label>
+    <input type="password" id="senha" />
+
+    <label>Impressora</label>
+    <div class="linha">
+      <select id="printerName"></select>
+      <button type="button" id="btnAtualizarImpressoras" title="Atualizar lista">↻</button>
+    </div>
+
+    <label>Largura do papel</label>
+    <select id="paperWidthMm">
+      <option value="80">80mm</option>
+      <option value="58">58mm</option>
+    </select>
+
+    <label>Verificar pedidos novos a cada (segundos)</label>
+    <input type="number" id="pollIntervalSeconds" min="3" step="1" />
+
+    <label class="checkbox-linha">
+      <input type="checkbox" id="autoStart" />
+      Iniciar automaticamente com o Windows
+    </label>
+
+    <div class="botoes">
+      <button type="submit" class="primario">Salvar configurações</button>
+    </div>
+  </form>
+
+  <div class="botoes secundarios">
+    <button type="button" id="btnTestarConexao">Testar conexão</button>
+    <button type="button" id="btnTestarLogin">Testar login</button>
+    <button type="button" id="btnTestarImpressao">Imprimir teste</button>
+  </div>
+
+  <p class="mensagem" id="mensagem"></p>
+
+  <footer>
+    O app fica rodando na bandeja do Windows monitorando pedidos novos, mesmo com esta janela fechada.
+  </footer>
+
+  <script src="renderer.js"></script>
+</body>
+</html>

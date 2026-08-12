@@ -1,0 +1,50 @@
+{
+  "name": "loja-print-agent",
+  "version": "1.0.0",
+  "description": "Agente local que monitora pedidos novos do Barracão Gourmet e imprime na impressora térmica da loja.",
+  "main": "src/main.js",
+  "author": "Barracão Gourmet",
+  "license": "UNLICENSED",
+  "private": true,
+  "scripts": {
+    "start": "electron .",
+    "dist": "electron-builder"
+  },
+  "dependencies": {
+    "axios": "^1.7.9",
+    "electron-store": "^8.2.0",
+    "pdfkit": "^0.17.2",
+    "pdf-to-printer": "^5.8.0"
+  },
+  "devDependencies": {
+    "electron": "^32.2.6",
+    "electron-builder": "^25.1.8"
+  },
+  "build": {
+    "appId": "com.barracaogourmet.printagent",
+    "productName": "Barracão Gourmet - Impressora",
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "src/**/*",
+      "renderer/**/*",
+      "assets/**/*",
+      "package.json"
+    ],
+    "win": {
+      "target": "nsis",
+      "icon": "assets/icon.ico",
+      "signAndEditExecutable": false
+    },
+    "forceCodeSigning": false,
+    "npmRebuild": false,
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "runAfterFinish": true
+    }
+  }
+}

@@ -1,0 +1,140 @@
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  padding: 20px 24px;
+  font-family: "Segoe UI", Arial, sans-serif;
+  background: #f5f6f8;
+  color: #1c2130;
+}
+
+header h1 {
+  margin: 0;
+  font-size: 20px;
+}
+
+.subtitulo {
+  margin: 2px 0 16px;
+  color: #6b7280;
+  font-size: 12.5px;
+}
+
+.status-box {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: #fff;
+  border: 1px solid #e2e5ea;
+  border-radius: 10px;
+  padding: 10px 14px;
+  margin-bottom: 16px;
+}
+
+.status-bolinha {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: #9ca3af;
+  flex-shrink: 0;
+}
+
+.status-bolinha.ok { background: #22c55e; }
+.status-bolinha.erro { background: #ef4444; }
+
+#statusTexto {
+  margin: 0;
+  font-weight: 600;
+  font-size: 13px;
+}
+
+.status-detalhe {
+  margin: 2px 0 0;
+  font-size: 11.5px;
+  color: #6b7280;
+}
+
+form {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+label {
+  font-size: 12px;
+  font-weight: 600;
+  margin-top: 8px;
+  color: #374151;
+}
+
+input[type="text"], input[type="email"], input[type="password"], input[type="number"], select {
+  padding: 8px 10px;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  font-size: 13px;
+  background: #fff;
+}
+
+.linha {
+  display: flex;
+  gap: 6px;
+}
+
+.linha select { flex: 1; }
+
+.checkbox-linha {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 500;
+  margin-top: 12px;
+}
+
+.checkbox-linha input { width: auto; }
+
+.botoes {
+  display: flex;
+  gap: 8px;
+  margin-top: 14px;
+}
+
+.botoes.secundarios {
+  margin-top: 10px;
+}
+
+button {
+  cursor: pointer;
+  border-radius: 6px;
+  border: 1px solid #d1d5db;
+  background: #fff;
+  padding: 8px 12px;
+  font-size: 12.5px;
+  color: #1c2130;
+}
+
+button.primario {
+  background: #16a34a;
+  border-color: #16a34a;
+  color: #fff;
+  font-weight: 600;
+  flex: 1;
+}
+
+#btnAtualizarImpressoras {
+  padding: 8px 10px;
+}
+
+.mensagem {
+  min-height: 16px;
+  font-size: 12px;
+  margin-top: 10px;
+  color: #16a34a;
+}
+
+.mensagem.erro { color: #dc2626; }
+
+footer {
+  margin-top: 18px;
+  font-size: 10.5px;
+  color: #9ca3af;
+  line-height: 1.4;
+}

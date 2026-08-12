@@ -1,0 +1,361 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Usuario {
+  id        String   @id @default(uuid())
+  nome      String
+  email     String   @unique
+  senha     String
+  perfil    String   @default("OPERADOR") // ADMIN | GERENTE | OPERADOR
+  ativo     Boolean  @default(true)
+  criadoEm DateTime @default(now())
+
+  @@map("usuarios")
+}
+
+model Entregador {
+  id          String   @id @default(uuid())
+  nome        String
+  numero      String   @unique
+  criadoEm    DateTime @default(now())
+  atualizadoEm DateTime @updatedAt
+
+  @@map("entregadores")
+}
+
+model Produto {
+  id             String   @id @default(uuid())
+  nome           String
+  descricao      String?
+  categoria      String
+  tipoVariacao   String?
+  controlaEstoquePorVariacao Boolean @default(false)
+  preco          Float
+  custoMedio     Float    @default(0)
+  custoUltimaCompra Float @default(0)
+  estoque        Int      @default(0)
+  estoqueMinimo  Int      @default(5)
+  disponivel     Boolean  @default(true)
+  imagemUrl      String?
+  criadoEm      DateTime @default(now())
+  atualizadoEm  DateTime @updatedAt
+
+  itensPedido     ItemPedido[]
+  movimentacoes   MovimentacaoEstoque[]
+  variacoes       ProdutoVariacao[]
+
+  @@map("produtos")
+}
+
+model ProdutoVariacao {
+  id          String   @id @default(uuid())
+  produtoId   String
+  nome        String
+  descricao   String?
+  ordem       Int      @default(0)
+  estoque     Int      @default(0)
+  estoqueMinimo Int    @default(0)
+  criadoEm    DateTime @default(now())
+  atualizadoEm DateTime @updatedAt
+
+  produto Produto @relation(fields: [produtoId], references: [id], onDelete: Cascade)
+
+  @@map("produto_variacoes")
+  @@index([produtoId, ordem])
+}
+
+model CategoriaEstoque {
+  id        String   @id @default(uuid())
+  nome      String   @unique
+  acrescimoCartao Float @default(0)
+  // Capa da categoria exibida no cardapio digital.
+  imagemUrl String?
+  criadoEm  DateTime @default(now())
+  atualizadoEm DateTime @updatedAt
+
+  @@map("categorias_estoque")
+}
+
+model Cliente {
+  id          String   @id @default(uuid())
+  nome        String
+  telefone    String?
+  email       String?
+  endereco    String?
+  cep         String?
+  bairro      String?
+  cidade      String?
+  cpf         String?
+  dataNasc    String?
+  observacoes String?
+  ativo       Boolean  @default(true)
+  // Isencao de frete individual: quando true, todo pedido DELIVERY deste cliente sai com frete 0.
+  entregaGratis Boolean @default(false)
+  criadoEm   DateTime @default(now())
+
+  pedidos    Pedido[]
+  interacoes InteracaoCliente[]
+
+  @@map("clientes")
+}
+
+model InteracaoCliente {
+  id        String   @id @default(uuid())
+  clienteId String
+  tipo      String   // PEDIDO | CONTATO | OBSERVACAO | REATIVACAO
+  descricao String
+  criadoEm DateTime @default(now())
+
+  cliente Cliente @relation(fields: [clienteId], references: [id], onDelete: Cascade)
+
+  @@map("interacoes_clientes")
+}
+
+model Contador {
+  id    String @id @default("pedido_numero")
+  valor Int    @default(0)
+
+  @@map("contadores")
+}
+
+model Pedido {
+  id              String   @id @default(uuid())
+  numero          Int      @unique @default(0)
+  clienteId       String?
+  nomeCliente     String?
+  telefoneCliente String?
+  cepEntrega      String?
+  enderecoEntrega String?
+  tipo            String   @default("DELIVERY")  // DELIVERY | RETIRADA | LOCAL
+  status          String   @default("RECEBIDO")  // RECEBIDO | EM_PREPARO | PRONTO | EM_ENTREGA | ENTREGUE | CANCELADO
+  origem          String   @default("MANUAL")    // CARDAPIO_DIGITAL | MANUAL | WHATSAPP
+  pagamento       String   @default("PENDENTE")  // PENDENTE | PIX | CARTAO_CREDITO | CARTAO_DEBITO | DINHEIRO
+  pagamentoEntregaMetodo String?
+  statusPagamento String   @default("AGUARDANDO") // AGUARDANDO | PAGO | CANCELADO
+  mercadoPagoOrderId String?
+  mercadoPagoPaymentId String?
+  mercadoPagoStatus String?
+  mercadoPagoStatusDetail String?
+  mercadoPagoQrCode String?
+  mercadoPagoQrCodeImageUrl String?
+  mercadoPagoTicketUrl String?
+  mercadoPagoExpirationDate String?
+  total           Float
+  cupomId         String?
+  cupomCodigo     String?
+  descontoCupom   Float    @default(0)
+  impresso        Boolean  @default(false)
+  observacoes     String?
+  criadoEm       DateTime @default(now())
+  atualizadoEm   DateTime @updatedAt
+
+  cliente   Cliente?          @relation(fields: [clienteId], references: [id])
+  cupom     Cupom?            @relation(fields: [cupomId], references: [id], onDelete: SetNull)
+  itens     ItemPedido[]
+  historico HistoricoPedido[]
+
+  @@map("pedidos")
+}
+
+model ItemPedido {
+  id         String @id @default(uuid())
+  pedidoId   String
+  produtoId  String
+  variacaoNome String?
+  quantidade Int
+  precoUnit  Float
+  subtotal   Float
+
+  pedido  Pedido  @relation(fields: [pedidoId], references: [id], onDelete: Cascade)
+  produto Produto @relation(fields: [produtoId], references: [id])
+
+  @@map("itens_pedido")
+}
+
+model HistoricoPedido {
+  id        String   @id @default(uuid())
+  pedidoId  String
+  status    String
+  obs       String?
+  criadoEm DateTime @default(now())
+
+  pedido Pedido @relation(fields: [pedidoId], references: [id], onDelete: Cascade)
+
+  @@map("historico_pedidos")
+}
+
+model MovimentacaoEstoque {
+  id         String   @id @default(uuid())
+  produtoId  String
+  variacaoNome String?
+  tipo       String   // ENTRADA | SAIDA | AJUSTE
+  quantidade Int
+  custoUnitario Float?
+  custoTotal Float?
+  motivo     String?
+  criadoEm  DateTime @default(now())
+
+  produto Produto @relation(fields: [produtoId], references: [id])
+
+  @@map("movimentacoes_estoque")
+}
+
+model LancamentoFinanceiro {
+  id        String   @id @default(uuid())
+  tipo      String   // RECEITA | CUSTO
+  categoria String
+  descricao String
+  valor     Float
+  data      DateTime
+  pedidoId  String?
+  criadoEm DateTime @default(now())
+
+  @@map("lancamentos_financeiros")
+}
+
+// ===== MÓDULO IA =====
+
+model ConfiguracaoIA {
+  id            String   @id @default(uuid())
+  openaiApiKey  String?
+  openaiModel   String   @default("gpt-4o-mini")
+  uzapiUrl      String?
+  uzapiAdminToken String?
+  // Liga/desliga global do agente de IA. Quando false, o webhook registra a
+  // mensagem recebida mas nao responde automaticamente (nem gestao nem atendimento).
+  iaAtiva       Boolean  @default(true)
+  criadoEm      DateTime @default(now())
+  atualizadoEm  DateTime @updatedAt
+
+  @@map("configuracao_ia")
+}
+
+// ===== MÓDULO LOJA =====
+
+model ConfiguracaoLoja {
+  id              String   @id @default(uuid())
+  lojaFechada     Boolean  @default(false)
+  mensagemFechado String?
+  criadoEm        DateTime @default(now())
+  atualizadoEm    DateTime @updatedAt
+
+  @@map("configuracao_loja")
+}
+
+// Cupons de desconto (cardapio digital e pedidos manuais).
+model Cupom {
+  id                String   @id @default(uuid())
+  codigo            String   @unique
+  tipo              String   // PERCENTUAL | VALOR_FIXO
+  valor             Float
+  ativo             Boolean  @default(true)
+  valorMinimoPedido Float?
+  descontoMaximo    Float?   // teto de desconto em R$, usado so quando tipo = PERCENTUAL
+  limiteUsos        Int?     // total de usos permitidos (null = ilimitado)
+  usosCount         Int      @default(0)
+  limitePorCliente  Int?     // usos permitidos por telefone (null = ilimitado)
+  diasSemana        Int[]    @default([]) // 0=domingo .. 6=sabado; vazio = todos os dias
+  somentePix        Boolean  @default(false) // se true, so vale pra pedido pago na hora via PIX (Mercado Pago)
+  tiposPedido       String[] @default([]) // DELIVERY | RETIRADA | LOCAL; vazio = todos os tipos
+  criadoEm          DateTime @default(now())
+  atualizadoEm      DateTime @updatedAt
+
+  pedidos Pedido[]
+
+  @@map("cupons")
+}
+
+// Numeros que, ao mandar mensagem para a instancia unica, sao atendidos pelo
+// agente de GESTAO em vez do agente de ATENDIMENTO. Os demais numeros caem no
+// atendimento normal.
+model NumeroGestao {
+  id       String   @id @default(uuid())
+  numero   String   @unique // digitos como informado (ex: 5511999999999)
+  nome     String?
+  criadoEm DateTime @default(now())
+
+  @@map("numeros_gestao")
+}
+
+model InstanciaWhatsApp {
+  id              String   @id @default(uuid())
+  nome            String
+  tipo            String   // GESTAO | ATENDIMENTO
+  provedor        String   // UZAPI | META_OFICIAL
+  status          String   @default("DESCONECTADO") // DESCONECTADO | CONECTANDO | QR_CODE | CONECTADO
+  // UZapi fields
+  uzapiUrl        String?
+  uzapiToken      String?
+  uzapiInstanceId String?
+  // Meta Official fields
+  metaAccessToken String?
+  metaPhoneNumberId String?
+  metaWabaId      String?
+  // Common
+  telefone        String?
+  qrCode          String?
+  webhookUrl      String?
+  criadoEm        DateTime @default(now())
+  atualizadoEm    DateTime @updatedAt
+
+  mensagens       MensagemIA[]
+
+  @@map("instancias_whatsapp")
+}
+
+model MensagemIA {
+  id            String   @id @default(uuid())
+  instanciaId   String
+  remetente     String   // numero do remetente
+  conteudo      String   // mensagem recebida
+  resposta      String?  // resposta da IA
+  tipo          String   @default("TEXTO") // TEXTO | AUDIO | IMAGEM
+  origem        String   @default("IA") // IA | MANUAL
+  criadoEm      DateTime @default(now())
+
+  instancia     InstanciaWhatsApp @relation(fields: [instanciaId], references: [id], onDelete: Cascade)
+
+  @@map("mensagens_ia")
+}
+
+// Cache de coordenadas por CEP (evita repetir chamadas a API externa de CEP).
+model CepCoordenada {
+  cep        String   @id
+  logradouro String   @default("")
+  bairro     String   @default("")
+  cidade     String   @default("")
+  uf         String   @default("")
+  lat        Float
+  lon        Float
+  criadoEm   DateTime @default(now())
+
+  @@map("cep_coordenadas")
+}
+
+// Controle de pausa da IA por conversa (instancia + contato).
+// Quando iaPausada=true, a IA nao responde automaticamente e o atendimento e humano.
+model AtendimentoIa {
+  id           String    @id @default(uuid())
+  instanciaId  String
+  remetente    String    // numero do contato
+  iaPausada    Boolean   @default(false)
+  pausadoEm    DateTime?
+  // Marca quando a saudacao de boas-vindas ja foi enviada para este contato.
+  // Fica aqui (e nao no historico de MensagemIA) para sobreviver ao /clear e
+  // permitir envio idempotente mesmo com webhook duplicado ou retry do debounce.
+  saudacaoEnviadaEm DateTime?
+  criadoEm     DateTime  @default(now())
+  atualizadoEm DateTime  @updatedAt
+
+  @@unique([instanciaId, remetente])
+  @@map("atendimentos_ia")
+}

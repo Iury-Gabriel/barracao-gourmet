@@ -1,0 +1,281 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Barracão Gourmet — Design System (vermelho, marrom e branco) */
+
+@layer base {
+  :root {
+    /* Core backgrounds — branco quente */
+    --background: 30 25% 97%;
+    --foreground: 15 40% 12%;
+
+    /* Cards & surfaces */
+    --card: 0 0% 100%;
+    --card-foreground: 15 40% 12%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 15 40% 12%;
+
+    /* Primary - Vermelho da marca #C4161C */
+    --primary: 358 80% 43%;
+    --primary-foreground: 0 0% 100%;
+
+    /* Secondary - Marrom */
+    --secondary: 16 32% 90%;
+    --secondary-foreground: 15 40% 15%;
+
+    /* Muted */
+    --muted: 24 22% 93%;
+    --muted-foreground: 18 14% 40%;
+
+    /* Accent - Marrom claro */
+    --accent: 16 38% 90%;
+    --accent-foreground: 15 40% 15%;
+
+    /* Destructive */
+    --destructive: 0 72% 48%;
+    --destructive-foreground: 0 0% 100%;
+
+    /* Success */
+    --success: 142 60% 38%;
+    --success-foreground: 0 0% 100%;
+
+    /* Warning */
+    --warning: 38 92% 55%;
+    --warning-foreground: 15 40% 12%;
+
+    /* Info */
+    --info: 16 45% 32%;
+    --info-foreground: 0 0% 100%;
+
+    /* Borders & inputs */
+    --border: 20 20% 87%;
+    --input: 20 20% 87%;
+    --ring: 358 80% 43%;
+
+    --radius: 0.5rem;
+
+    /* Sidebar — marrom escuro com destaque vermelho */
+    --sidebar-background: 14 42% 13%;
+    --sidebar-foreground: 30 30% 96%;
+    --sidebar-primary: 358 80% 48%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 16 35% 22%;
+    --sidebar-accent-foreground: 30 30% 96%;
+    --sidebar-border: 16 28% 20%;
+    --sidebar-ring: 358 80% 48%;
+    --sidebar-muted: 20 18% 65%;
+
+    /* Funnel colors — do vermelho ao marrom */
+    --funnel-1: 358 80% 43%;
+    --funnel-2: 358 65% 52%;
+    --funnel-3: 10 60% 48%;
+    --funnel-4: 16 55% 42%;
+    --funnel-5: 20 48% 38%;
+    --funnel-6: 24 40% 34%;
+    --funnel-7: 28 32% 44%;
+    --funnel-8: 142 60% 38%;
+    --funnel-9: 20 12% 50%;
+
+    /* Status colors */
+    --status-new: 16 45% 32%;
+    --status-contact: 358 80% 43%;
+    --status-qualified: 142 60% 38%;
+    --status-pending: 38 92% 55%;
+    --status-noresponse: 20 12% 50%;
+  }
+
+  .dark {
+    --background: 15 32% 7%;
+    --foreground: 30 30% 96%;
+
+    --card: 15 30% 11%;
+    --card-foreground: 30 30% 96%;
+
+    --popover: 15 30% 11%;
+    --popover-foreground: 30 30% 96%;
+
+    --primary: 358 78% 50%;
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 16 30% 18%;
+    --secondary-foreground: 30 30% 96%;
+
+    --muted: 15 24% 16%;
+    --muted-foreground: 22 14% 68%;
+
+    --accent: 16 34% 20%;
+    --accent-foreground: 30 30% 96%;
+
+    --destructive: 0 68% 45%;
+    --destructive-foreground: 0 0% 100%;
+
+    --success: 142 55% 42%;
+    --success-foreground: 0 0% 100%;
+
+    --warning: 38 88% 58%;
+    --warning-foreground: 15 40% 12%;
+
+    --info: 16 40% 45%;
+    --info-foreground: 0 0% 100%;
+
+    --border: 16 24% 20%;
+    --input: 16 24% 20%;
+    --ring: 358 78% 50%;
+
+    --sidebar-background: 14 40% 9%;
+    --sidebar-foreground: 30 30% 96%;
+    --sidebar-primary: 358 78% 50%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 16 32% 18%;
+    --sidebar-accent-foreground: 30 30% 96%;
+    --sidebar-border: 16 26% 17%;
+    --sidebar-ring: 358 78% 50%;
+    --sidebar-muted: 22 14% 62%;
+  }
+}
+
+@layer base {
+  html,
+  body,
+  #root {
+    max-width: 100%;
+    overflow-x: hidden;
+  }
+
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground antialiased;
+    font-feature-settings: "rlig" 1, "calt" 1;
+  }
+}
+
+@layer components {
+  /* KPI Card Styles */
+  .kpi-card {
+    @apply bg-card rounded-lg border p-6 shadow-sm transition-shadow hover:shadow-md;
+  }
+
+  .kpi-value {
+    @apply text-3xl font-bold tracking-tight;
+  }
+
+  .kpi-label {
+    @apply text-sm font-medium text-muted-foreground;
+  }
+
+  /* Funnel Styles */
+  .funnel-stage {
+    @apply relative flex items-center justify-between px-4 py-3 text-sm font-medium transition-all;
+  }
+
+  .funnel-bar {
+    @apply h-2 rounded-full transition-all duration-500;
+  }
+
+  /* Status Badge Styles */
+  .status-badge {
+    @apply inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-medium;
+  }
+
+  .status-new {
+    @apply bg-info/10 text-info;
+  }
+
+  .status-contact {
+    @apply bg-primary/10 text-primary;
+  }
+
+  .status-qualified {
+    @apply bg-accent/10 text-accent;
+  }
+
+  .status-pending {
+    @apply bg-warning/20 text-warning-foreground;
+  }
+
+  .status-noresponse {
+    @apply bg-muted text-muted-foreground;
+  }
+
+  /* Activity Timeline */
+  .activity-item {
+    @apply relative flex gap-4 pb-6;
+  }
+
+  .activity-item::before {
+    @apply absolute left-[19px] top-10 h-full w-px bg-border content-[''];
+  }
+
+  .activity-item:last-child::before {
+    @apply hidden;
+  }
+
+  /* Chat Message Styles */
+  .chat-message {
+    @apply max-w-[80%] rounded-2xl px-4 py-2.5;
+  }
+
+  .chat-message-outgoing {
+    @apply ml-auto bg-primary text-primary-foreground rounded-br-sm;
+  }
+
+  .chat-message-incoming {
+    @apply bg-muted text-foreground rounded-bl-sm;
+  }
+
+  /* Navigation Active State */
+  .nav-active {
+    @apply bg-sidebar-accent text-sidebar-accent-foreground;
+  }
+
+  /* Table Row Hover */
+  .table-row-interactive {
+    @apply cursor-pointer transition-colors hover:bg-muted/50;
+  }
+
+  /* Priority Indicators */
+  .priority-high {
+    @apply text-destructive;
+  }
+
+  .priority-medium {
+    @apply text-accent;
+  }
+
+  .priority-low {
+    @apply text-success;
+  }
+}
+
+@layer utilities {
+  /* Gradient utilities */
+  .gradient-primary {
+    background: linear-gradient(135deg, hsl(var(--primary)) 0%, hsl(16 45% 25%) 100%);
+  }
+
+  .gradient-accent {
+    background: linear-gradient(135deg, hsl(16 45% 32%) 0%, hsl(358 80% 43%) 100%);
+  }
+
+  /* Shadow utilities */
+  .shadow-card {
+    box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.05), 0 1px 2px -1px rgb(0 0 0 / 0.05);
+  }
+
+  .shadow-card-hover {
+    box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.07), 0 2px 4px -2px rgb(0 0 0 / 0.05);
+  }
+
+  /* Truncate multi-line */
+  .line-clamp-2 {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+}
