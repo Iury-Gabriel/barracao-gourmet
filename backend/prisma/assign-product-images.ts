@@ -3,25 +3,28 @@ import { PrismaClient } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
-const commonsFileUrl = (fileName: string) =>
-  `https://commons.wikimedia.org/wiki/Special:FilePath/${encodeURIComponent(fileName)}`;
+// URL direta do upload.wikimedia.org. O Special:FilePath do commons responde 301
+// e o redirect nao traz Access-Control-Allow-Origin, o que faz o navegador
+// bloquear a imagem por CORS. O host final serve "access-control-allow-origin: *".
+const commonsFileUrl = (caminho: string) =>
+  `https://upload.wikimedia.org/wikipedia/commons/${caminho}`;
 
 const updates = [
-  { nome: 'Porção de Frango a Passarinho', imagemUrl: commonsFileUrl('Fried chicken pieces coated in sauce with sesame seeds 2025.jpg') },
-  { nome: 'Porção de Calabresa Acebolada', imagemUrl: commonsFileUrl('Platter meat and sausage with potato slices.jpg') },
-  { nome: 'Batata Frita com Cheddar e Bacon', imagemUrl: commonsFileUrl('French fries 3.jpg') },
-  { nome: 'Onion Rings Crocantes', imagemUrl: commonsFileUrl('Onion Rings - Gourmet Burger Kitchen 2023-10-03.jpg') },
-  { nome: 'Burger Barracão', imagemUrl: commonsFileUrl('Bacon Cheddar Burger (2121943498).jpg') },
-  { nome: 'X-Salada Artesanal', imagemUrl: commonsFileUrl('Hamburger sandwich.jpg') },
-  { nome: 'Picanha na Chapa', imagemUrl: commonsFileUrl('Grilled steak served with orange slices and sauce on wooden board - Flickr - nenadstojkovicart.jpg') },
-  { nome: 'Filé de Frango à Parmegiana', imagemUrl: commonsFileUrl('Chicken parmigiana.jpg') },
-  { nome: 'Chopp Pilsen 500ml', imagemUrl: commonsFileUrl('Thomaskirche Pils.jpg') },
-  { nome: 'Refrigerante Lata 350ml', imagemUrl: commonsFileUrl('Tumbler of cola with ice.jpg') },
-  { nome: 'Água Mineral 500ml', imagemUrl: commonsFileUrl('San Pellegrino 500ml bottle.jpg') },
-  { nome: 'Suco Natural de Laranja 500ml', imagemUrl: commonsFileUrl('Glass of Fresh Orange Juice.jpg') },
-  { nome: 'Caipirinha de Limão', imagemUrl: commonsFileUrl('Cocktail Caipirinha raw.jpg') },
-  { nome: 'Pudim de Leite Condensado', imagemUrl: commonsFileUrl('Homemade Flan.jpg') },
-  { nome: 'Petit Gateau de Chocolate', imagemUrl: commonsFileUrl('Piece of chocolate cake on a white plate decorated with chocolate sauce.jpg') },
+  { nome: 'Porção de Frango a Passarinho', imagemUrl: commonsFileUrl('8/8e/Fried_chicken_pieces_coated_in_sauce_with_sesame_seeds_2025.jpg') },
+  { nome: 'Porção de Calabresa Acebolada', imagemUrl: commonsFileUrl('b/ba/Platter_meat_and_sausage_with_potato_slices.jpg') },
+  { nome: 'Batata Frita com Cheddar e Bacon', imagemUrl: commonsFileUrl('e/e5/French_fries_3.jpg') },
+  { nome: 'Onion Rings Crocantes', imagemUrl: commonsFileUrl('4/41/Onion_Rings_-_Gourmet_Burger_Kitchen_2023-10-03.jpg') },
+  { nome: 'Burger Barracão', imagemUrl: commonsFileUrl('0/0f/Bacon_Cheddar_Burger_%282121943498%29.jpg') },
+  { nome: 'X-Salada Artesanal', imagemUrl: commonsFileUrl('e/e8/Hamburger_sandwich.jpg') },
+  { nome: 'Picanha na Chapa', imagemUrl: commonsFileUrl('1/13/Grilled_steak_served_with_orange_slices_and_sauce_on_wooden_board_-_Flickr_-_nenadstojkovicart.jpg') },
+  { nome: 'Filé de Frango à Parmegiana', imagemUrl: commonsFileUrl('1/12/Chicken_parmigiana.jpg') },
+  { nome: 'Chopp Pilsen 500ml', imagemUrl: commonsFileUrl('b/bf/Thomaskirche_Pils.jpg') },
+  { nome: 'Refrigerante Lata 350ml', imagemUrl: commonsFileUrl('c/cf/Tumbler_of_cola_with_ice.jpg') },
+  { nome: 'Água Mineral 500ml', imagemUrl: commonsFileUrl('7/72/San_Pellegrino_500ml_bottle.jpg') },
+  { nome: 'Suco Natural de Laranja 500ml', imagemUrl: commonsFileUrl('8/8c/Glass_of_Fresh_Orange_Juice.jpg') },
+  { nome: 'Caipirinha de Limão', imagemUrl: commonsFileUrl('9/92/Cocktail_Caipirinha_raw.jpg') },
+  { nome: 'Pudim de Leite Condensado', imagemUrl: commonsFileUrl('4/43/Homemade_Flan.jpg') },
+  { nome: 'Petit Gateau de Chocolate', imagemUrl: commonsFileUrl('e/ef/Piece_of_chocolate_cake_on_a_white_plate_decorated_with_chocolate_sauce.jpg') },
 ];
 
 async function main() {

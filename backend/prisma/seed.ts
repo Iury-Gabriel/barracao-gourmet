@@ -7,8 +7,30 @@ const prisma = new PrismaClient();
 async function main() {
   console.log('🌱 Iniciando seed...');
 
-  const commonsFileUrl = (fileName: string) =>
-    `https://commons.wikimedia.org/wiki/Special:FilePath/${encodeURIComponent(fileName)}`;
+  // URL direta do upload.wikimedia.org, nao o Special:FilePath do commons.
+  // O Special:FilePath responde 301 e a resposta do redirect nao traz
+  // Access-Control-Allow-Origin, entao o navegador bloqueia a imagem por CORS.
+  // O host final serve "access-control-allow-origin: *" e carrega normal.
+  const COMMONS_IMAGENS: Record<string, string> = {
+    'frango-passarinho': '8/8e/Fried_chicken_pieces_coated_in_sauce_with_sesame_seeds_2025.jpg',
+    'calabresa': 'b/ba/Platter_meat_and_sausage_with_potato_slices.jpg',
+    'batata-frita': 'e/e5/French_fries_3.jpg',
+    'onion-rings': '4/41/Onion_Rings_-_Gourmet_Burger_Kitchen_2023-10-03.jpg',
+    'burger': '0/0f/Bacon_Cheddar_Burger_%282121943498%29.jpg',
+    'x-salada': 'e/e8/Hamburger_sandwich.jpg',
+    'picanha': '1/13/Grilled_steak_served_with_orange_slices_and_sauce_on_wooden_board_-_Flickr_-_nenadstojkovicart.jpg',
+    'parmegiana': '1/12/Chicken_parmigiana.jpg',
+    'chopp': 'b/bf/Thomaskirche_Pils.jpg',
+    'refrigerante': 'c/cf/Tumbler_of_cola_with_ice.jpg',
+    'agua': '7/72/San_Pellegrino_500ml_bottle.jpg',
+    'suco-laranja': '8/8c/Glass_of_Fresh_Orange_Juice.jpg',
+    'caipirinha': '9/92/Cocktail_Caipirinha_raw.jpg',
+    'pudim': '4/43/Homemade_Flan.jpg',
+    'petit-gateau': 'e/ef/Piece_of_chocolate_cake_on_a_white_plate_decorated_with_chocolate_sauce.jpg',
+  };
+
+  const commonsFileUrl = (chave: string) =>
+    `https://upload.wikimedia.org/wikipedia/commons/${COMMONS_IMAGENS[chave]}`;
 
   // Usuários
   const senhaAdmin = await bcrypt.hash('admin123', 10);
@@ -44,7 +66,7 @@ async function main() {
       custoUltimaCompra: 22.50,
       estoque: 30,
       estoqueMinimo: 8,
-      imagemUrl: commonsFileUrl('Fried chicken pieces coated in sauce with sesame seeds 2025.jpg'),
+      imagemUrl: commonsFileUrl('frango-passarinho'),
     },
     {
       nome: 'Porção de Calabresa Acebolada',
@@ -55,7 +77,7 @@ async function main() {
       custoUltimaCompra: 18.90,
       estoque: 35,
       estoqueMinimo: 8,
-      imagemUrl: commonsFileUrl('Platter meat and sausage with potato slices.jpg'),
+      imagemUrl: commonsFileUrl('calabresa'),
     },
     {
       nome: 'Batata Frita com Cheddar e Bacon',
@@ -66,7 +88,7 @@ async function main() {
       custoUltimaCompra: 15.80,
       estoque: 40,
       estoqueMinimo: 10,
-      imagemUrl: commonsFileUrl('French fries 3.jpg'),
+      imagemUrl: commonsFileUrl('batata-frita'),
     },
     {
       nome: 'Onion Rings Crocantes',
@@ -77,7 +99,7 @@ async function main() {
       custoUltimaCompra: 11.40,
       estoque: 25,
       estoqueMinimo: 8,
-      imagemUrl: commonsFileUrl('Onion Rings - Gourmet Burger Kitchen 2023-10-03.jpg'),
+      imagemUrl: commonsFileUrl('onion-rings'),
     },
 
     // ===== Lanches =====
@@ -90,7 +112,7 @@ async function main() {
       custoUltimaCompra: 14.60,
       estoque: 45,
       estoqueMinimo: 12,
-      imagemUrl: commonsFileUrl('Bacon Cheddar Burger (2121943498).jpg'),
+      imagemUrl: commonsFileUrl('burger'),
     },
     {
       nome: 'X-Salada Artesanal',
@@ -101,7 +123,7 @@ async function main() {
       custoUltimaCompra: 10.90,
       estoque: 45,
       estoqueMinimo: 12,
-      imagemUrl: commonsFileUrl('Hamburger sandwich.jpg'),
+      imagemUrl: commonsFileUrl('x-salada'),
     },
 
     // ===== Pratos =====
@@ -114,7 +136,7 @@ async function main() {
       custoUltimaCompra: 68.00,
       estoque: 15,
       estoqueMinimo: 5,
-      imagemUrl: commonsFileUrl('Grilled steak served with orange slices and sauce on wooden board - Flickr - nenadstojkovicart.jpg'),
+      imagemUrl: commonsFileUrl('picanha'),
     },
     {
       nome: 'Filé de Frango à Parmegiana',
@@ -125,7 +147,7 @@ async function main() {
       custoUltimaCompra: 26.40,
       estoque: 20,
       estoqueMinimo: 6,
-      imagemUrl: commonsFileUrl('Chicken parmigiana.jpg'),
+      imagemUrl: commonsFileUrl('parmegiana'),
     },
 
     // ===== Bebidas =====
@@ -138,7 +160,7 @@ async function main() {
       custoUltimaCompra: 5.20,
       estoque: 80,
       estoqueMinimo: 20,
-      imagemUrl: commonsFileUrl('Thomaskirche Pils.jpg'),
+      imagemUrl: commonsFileUrl('chopp'),
     },
     {
       nome: 'Refrigerante Lata 350ml',
@@ -149,7 +171,7 @@ async function main() {
       custoUltimaCompra: 3.10,
       estoque: 90,
       estoqueMinimo: 24,
-      imagemUrl: commonsFileUrl('Tumbler of cola with ice.jpg'),
+      imagemUrl: commonsFileUrl('refrigerante'),
     },
     {
       nome: 'Água Mineral 500ml',
@@ -160,7 +182,7 @@ async function main() {
       custoUltimaCompra: 1.80,
       estoque: 70,
       estoqueMinimo: 20,
-      imagemUrl: commonsFileUrl('San Pellegrino 500ml bottle.jpg'),
+      imagemUrl: commonsFileUrl('agua'),
     },
     {
       nome: 'Suco Natural de Laranja 500ml',
@@ -171,7 +193,7 @@ async function main() {
       custoUltimaCompra: 4.50,
       estoque: 30,
       estoqueMinimo: 10,
-      imagemUrl: commonsFileUrl('Glass of Fresh Orange Juice.jpg'),
+      imagemUrl: commonsFileUrl('suco-laranja'),
     },
     {
       nome: 'Caipirinha de Limão',
@@ -182,7 +204,7 @@ async function main() {
       custoUltimaCompra: 7.30,
       estoque: 40,
       estoqueMinimo: 10,
-      imagemUrl: commonsFileUrl('Cocktail Caipirinha raw.jpg'),
+      imagemUrl: commonsFileUrl('caipirinha'),
     },
 
     // ===== Sobremesas =====
@@ -195,7 +217,7 @@ async function main() {
       custoUltimaCompra: 6.20,
       estoque: 20,
       estoqueMinimo: 6,
-      imagemUrl: commonsFileUrl('Homemade Flan.jpg'),
+      imagemUrl: commonsFileUrl('pudim'),
     },
     {
       nome: 'Petit Gateau de Chocolate',
@@ -206,7 +228,7 @@ async function main() {
       custoUltimaCompra: 9.10,
       estoque: 18,
       estoqueMinimo: 6,
-      imagemUrl: commonsFileUrl('Piece of chocolate cake on a white plate decorated with chocolate sauce.jpg'),
+      imagemUrl: commonsFileUrl('petit-gateau'),
     },
   ];
 
