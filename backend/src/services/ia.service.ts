@@ -17,7 +17,6 @@ const ATENDIMENTO_CARDAPIO_URL = 'https://barracaogourmet.com.br/cardapio';
 const ATENDIMENTO_AVISO_HORARIO_ENTREGA =
   'As entregas comecam a partir das 16h00. Se o pedido for feito antes desse horario, ele sai para entrega a partir das 16h00; depois disso, o prazo medio e de 30 a 50 minutos.';
 const TERMOS_FUMO = ['fumar', 'charuto', 'charutos', 'cigarro', 'cigarros', 'tabaco', 'vape', 'narguile'];
-const TERMOS_POD = ['pod', 'pods', 'pod descartavel', 'pods descartaveis', 'pod descartável', 'pods descartáveis'];
 const STOPWORDS_BUSCA = new Set([
   'o', 'a', 'os', 'as', 'de', 'da', 'do', 'das', 'dos', 'pra', 'para', 'tem', 'ter', 'quero', 'queria',
   'me', 'mostrar', 'mostra', 'quais', 'qual', 'com', 'sem', 'um', 'uma', 'uns', 'umas', 'por', 'favor',
@@ -63,7 +62,7 @@ export const ATENDIMENTO_BOAS_VINDAS = `🍻 Fala, tudo bem? Seja bem-vindo à B
 
 Agora ficou muito mais fácil fazer o seu pedido! 🚀
 
-Acesse nosso cardápio completo pelo site, escolha suas bebidas, combos, PODS, adicione tudo ao carrinho e finalize seu pedido em poucos cliques.
+Acesse nosso cardápio completo pelo site, escolha seus pratos, porções, bebidas e combos, adicione tudo ao carrinho e finalize seu pedido em poucos cliques.
 
 🛒 Peça aqui:
 barracaogourmet.com.br/cardapio
@@ -73,15 +72,15 @@ barracaogourmet.com.br/cardapio
 ✅ Combos e promoções exclusivas
 ✅ Pedido fácil e seguro 🥇
 
-Assim que o pedido entrar no sistema, nós já começamos a preparar tudo para você! 🍻🔥😶‍🌫️`;
+Assim que o pedido entrar no sistema, nós já começamos a preparar tudo para você! 🍻🔥`;
 
 const ATENDIMENTO_OFERTA_PEDIDO_MANUAL = 'Você gostaria de fazer um pedido Manual por aqui mesmo?';
 
-const ATENDIMENTO_FORMULARIO_PEDIDO_MANUAL = `Para pedir POD manualmente 🥃💨
+const ATENDIMENTO_FORMULARIO_PEDIDO_MANUAL = `Para pedir manualmente 🍔🍻
 Seu Nome:
 Número:
 Endereço completo e Número:
-Sabor e modelo do pod:
+Itens do pedido (quantidade e sabor, se houver):
 Forma de pagamento:
 
 Completa aqui por favor
@@ -93,7 +92,7 @@ Copia e cola, e completa com suas informações!`;
 const CAMPOS_FORMULARIO_PEDIDO_MANUAL = [
   'seu nome',
   'endereco completo',
-  'sabor e modelo do pod',
+  'itens do pedido',
   'forma de pagamento',
 ];
 
@@ -113,7 +112,7 @@ function mensagemPedePedidoManual(mensagem: string) {
 }
 
 // Aceite puro da oferta: a mensagem INTEIRA precisa ser afirmativa.
-// Ancorar so o inicio deixaria "quero 2 pods de menta" virar "sim" e devolver formulario em branco.
+// Ancorar so o inicio deixaria "quero 2 porcoes de calabresa" virar "sim" e devolver formulario em branco.
 const NUCLEO_AFIRMATIVO =
   '(s|sim|isso|claro|quero|queria|aceito|bora|vamos|vamo|ok|okay|blz|beleza|pode|pode ser|manda|manda ai|pode mandar|pode sim|sim quero|quero sim|por favor|pf|uhum|aham|positivo|certo|show|perfeito|fechado|top)';
 const REGEX_AFIRMATIVA = new RegExp(`^${NUCLEO_AFIRMATIVO}([ ,]+${NUCLEO_AFIRMATIVO})*$`);
@@ -222,15 +221,7 @@ function extrairTokensBuscaCatalogo(texto: string) {
     if (singular) tokensExpandido.add(singular);
   }
 
-  if (TERMOS_POD.some((termo) => texto.includes(normalizarBuscaTexto(termo)))) {
-    tokensExpandido.add('pod');
-  }
-
   return Array.from(tokensExpandido);
-}
-
-function mensagemPedePods(textoNormalizado: string) {
-  return TERMOS_POD.some((termo) => textoNormalizado.includes(normalizarBuscaTexto(termo)));
 }
 
 type ProdutoBuscaAtendimento = {
@@ -346,10 +337,6 @@ function calcularRelevanciaProdutoBusca(
     }
   }
 
-  if (mensagemPedePods(textoNormalizado) && categoriaNormalizada.includes('pod')) {
-    relevancia += 6;
-  }
-
   return {
     relevancia,
     tokensCorrespondidos: tokensCorrespondidos.size,
@@ -360,18 +347,13 @@ function calcularRelevanciaProdutoBusca(
 }
 
 function ranquearProdutosPorBusca(produtos: ProdutoBuscaAtendimento[], textoNormalizado: string, tokens: string[]) {
-  const buscaPods = mensagemPedePods(textoNormalizado);
-  const tokensEspecificos = tokens.filter((token) => token !== 'pod');
-  const minimoTokensCorrespondidos = tokensEspecificos.length >= 4 ? 2 : tokensEspecificos.length >= 2 ? 1 : 0;
+  const minimoTokensCorrespondidos = tokens.length >= 4 ? 2 : tokens.length >= 2 ? 1 : 0;
 
   return produtos
     .map((produto) => calcularRelevanciaProdutoBusca(produto, textoNormalizado, tokens))
     .filter((item) => {
       if (!textoNormalizado) return true;
       if (item.fraseNome || item.fraseVariacao) return true;
-      if (tokensEspecificos.length === 0 && buscaPods) {
-        return normalizarBuscaTexto(item.produto.categoria || '').includes('pod');
-      }
       return item.tokensCorrespondidos >= minimoTokensCorrespondidos && item.relevancia > 0;
     })
     .sort((a, b) =>
@@ -520,7 +502,6 @@ async function responderConfirmacaoPedidoCardapio(mensagem: string) {
 async function responderCatalogoSemAlucinacao(mensagem: string) {
   const texto = normalizarBuscaTexto(mensagem);
   const tokens = extrairTokensBuscaCatalogo(texto);
-  const pediuPods = mensagemPedePods(texto);
   const pediuSabores = mensagemPedeSabores(texto);
   const produtos = await prisma.produto.findMany({
     where: {
@@ -572,7 +553,7 @@ async function responderCatalogoSemAlucinacao(mensagem: string) {
   const consultaAberta = /(o que tem|quais|mostra|lista|catalogo|cardapio)/i.test(texto);
 
   let filtrados = produtosDisponiveis;
-  if ((tokens.length > 0 || pediuPods) && !consultaAberta) {
+  if (tokens.length > 0 && !consultaAberta) {
     filtrados = ranquearProdutosPorBusca(produtosDisponiveis, texto, tokens).map((item) => item.produto as typeof produtosDisponiveis[number]);
   }
 
@@ -598,19 +579,10 @@ async function responderCatalogoSemAlucinacao(mensagem: string) {
     return `Encontrei estes produtos com todos os sabores disponiveis agora:\n${listaSabores.join('\n')}`;
   }
 
-  const lista = filtrados.map((p) => {
-    const base = `${p.nome} - ${formatBRL(p.preco)}`;
-    const sabores = formatarSaboresProduto(p);
-    if (pediuPods && sabores) {
-      return `${base}\nSabores: ${sabores}`;
-    }
-    return base;
-  });
-  const prefixo = pediuPods
-    ? 'Temos pods disponiveis agora:'
-    : consultaAberta || tokens.length === 0
-      ? 'Temos disponivel agora:'
-      : 'Encontrei em estoque agora:';
+  const lista = filtrados.map((p) => `${p.nome} - ${formatBRL(p.preco)}`);
+  const prefixo = consultaAberta || tokens.length === 0
+    ? 'Temos disponivel agora:'
+    : 'Encontrei em estoque agora:';
 
   return `${prefixo}\n${lista.join('\n')}`;
 }
@@ -1064,7 +1036,6 @@ function criarToolsAtendimento(contexto: { mensagensUsuarioRecentes: string[] } 
     func: async ({ busca, categoria, apenasDisponiveis, limite }) => {
       const textoBusca = normalizarBuscaTexto(`${busca || ''} ${categoria || ''}`.trim());
       const tokensBusca = extrairTokensBuscaCatalogo(textoBusca);
-      const pediuPods = mensagemPedePods(textoBusca);
       const take = Number.isFinite(Number(limite)) ? Math.min(Math.max(Number(limite), 1), 30) : 12;
       const produtos = await prisma.produto.findMany({
         where: {
@@ -1117,7 +1088,6 @@ function criarToolsAtendimento(contexto: { mensagensUsuarioRecentes: string[] } 
         imagemUrl: normalizeImageUrl(p.imagemUrl),
         sabores: Array.isArray(p.variacoes) ? p.variacoes.map((variacao) => variacao.nome).filter(Boolean) : [],
         variacoes: p.variacoes || [],
-        destaqueCategoria: pediuPods && normalizarBuscaTexto(p.categoria).includes('pod') ? 'POD' : undefined,
       }));
 
       return JSON.stringify({
@@ -1989,9 +1959,9 @@ Comportamento:
 - Nunca diga apenas "chega em 30 a 50 minutos" em pedido feito antes das 16h00; use "a partir das 16h00, com prazo medio de 30 a 50 minutos".
 - Nunca cite produto que nao tenha sido retornado por tool nesta conversa e, para vitrine ao cliente, considere somente itens com estoque > 0
 - Ao apresentar produtos, envie apenas informacoes basicas (nome, preco, disponibilidade). Nao informe a quantidade exata em estoque ao cliente. Nao envie foto e nao envie link de foto nesse momento.
-- Se o cliente perguntar por categorias como Pod, Pods, Vape ou sabores, trate isso como busca por categoria/produto no estoque. A categoria Pod e muito importante neste sistema.
-- Quando encontrar produto da categoria Pod, procure e informe todos os sabores/variacoes disponiveis sempre que houver. Nunca responda apenas um sabor se o produto tiver mais de um.
-- Se o cliente perguntar quais sabores existem em um pod especifico, responda com a lista completa de sabores retornada pelas tools.
+- Se o cliente perguntar por uma categoria do cardapio (ex: porcoes, lanches, bebidas, sobremesas) ou por sabores, trate isso como busca por categoria/produto no estoque.
+- Quando o produto tiver sabores/variacoes, informe todos os disponiveis sempre que houver. Nunca responda apenas um sabor se o produto tiver mais de um.
+- Se o cliente perguntar quais sabores existem em um produto especifico, responda com a lista completa de sabores retornada pelas tools.
 - Sempre pergunte: "Quer que eu te mostre a foto desse produto?" antes de qualquer envio de foto.
 - Somente se o cliente confirmar que quer ver a foto, inclua a URL da imagem no final da resposta para disparo da midia no WhatsApp.
 - Quando for enviar foto, a primeira linha da resposta deve ser exatamente: "NOME DO PRODUTO - R$ VALOR", para usar como legenda.
@@ -2003,7 +1973,7 @@ Comportamento:
 Processo comercial obrigatorio para fechar pedido:
 1) Entender produto e quantidade
 2) Confirmar disponibilidade e valor com tools
-3) OBRIGATORIO: se o produto tiver sabor/variacao (ex: Pod), perguntar e confirmar o SABOR escolhido pelo cliente AINDA NESTA ETAPA, antes de coletar nome e antes dos dados de entrega. Se o cliente pediu mais de uma unidade, confirme o sabor de cada uma. Nunca avance para nome/entrega com um Pod sem sabor definido. Liste os sabores disponiveis retornados pela tool para o cliente escolher.
+3) OBRIGATORIO: se o produto tiver sabor/variacao, perguntar e confirmar o SABOR escolhido pelo cliente AINDA NESTA ETAPA, antes de coletar nome e antes dos dados de entrega. Se o cliente pediu mais de uma unidade, confirme o sabor de cada uma. Nunca avance para nome/entrega com um produto de sabor indefinido. Liste os sabores disponiveis retornados pela tool para o cliente escolher.
 4) Coletar nome
 5) So depois de receber o nome, perguntar se e DELIVERY ou RETIRADA
 6) Se for DELIVERY: primeiro peca SOMENTE o CEP. Com o CEP, use a tool consultar_cep para obter o endereco (rua e bairro) e confirme com o cliente perguntando se o endereco esta correto. Depois que o cliente confirmar, peca apenas o NUMERO da casa (e complemento, se houver). Nunca peca a rua manualmente se o CEP ja retornou o endereco. O frete e calculado automaticamente pelas tools (calcular_frete_entrega ou montar_resumo_pedido) a partir do CEP + endereco; nunca pergunte a distancia em km nem invente o valor do frete. Se a tool indicar acimaDoLimite/ofereceRetirada (endereco acima de 12km), envie a mensagem de mensagemForaDeArea e, se o cliente aceitar, prossiga como RETIRADA
@@ -2026,8 +1996,8 @@ Regra obrigatoria de conducao:
 - Nao pergunte endereco e forma de pagamento juntos
 - Nao pergunte troco e email juntos
 - Em cada mensagem, avance no maximo um passo do processo comercial
-- Para Pod (ou qualquer produto com sabor/variacao), SEMPRE pergunte e confirme o sabor logo apos o cliente escolher o produto, ANTES de pedir nome ou dados de entrega
-- Nunca confirme pedido de pod ou produto com variacao sem confirmar o sabor/variacao escolhido pelo cliente
+- Para qualquer produto com sabor/variacao, SEMPRE pergunte e confirme o sabor logo apos o cliente escolher o produto, ANTES de pedir nome ou dados de entrega
+- Nunca confirme pedido de produto com variacao sem confirmar o sabor/variacao escolhido pelo cliente
 - Nunca use a tool criar_pedido_whatsapp sem forma de pagamento explicitamente confirmada pelo cliente na conversa
 
 Regra do inicio da conversa:
@@ -2044,7 +2014,7 @@ Pedido manual (formulario):
 ${ATENDIMENTO_FORMULARIO_PEDIDO_MANUAL}
 - Depois que o cliente devolver o formulario preenchido, confirme os dados, valide produto/sabor e preco com as tools e siga o processo comercial normal ate a tool criar_pedido_whatsapp.
 - Se algum campo do formulario voltar vazio ou incompleto, pergunte apenas o campo que faltou, um por mensagem.
-- O formulario nao dispensa as regras: confirme sabor do pod, calcule frete pelo CEP com as tools e confirme a forma de pagamento antes de criar o pedido.
+- O formulario nao dispensa as regras: confirme o sabor quando o produto tiver variacao, calcule frete pelo CEP com as tools e confirme a forma de pagamento antes de criar o pedido.
 
 Escalada para humano (obrigatorio):
 - Ameaça de processo, "vou denunciar", "quero meu dinheiro de volta agora"

@@ -532,7 +532,7 @@ export default function ProdutosPage() {
                 />
                 <div>
                   <Label>Controlar estoque pelas variacoes</Label>
-                  <p className="text-xs text-muted-foreground">Use para Pods e outros produtos em que cada sabor tenha estoque proprio.</p>
+                  <p className="text-xs text-muted-foreground">Use para produtos em que cada sabor tenha estoque proprio.</p>
                 </div>
               </div>
             </div>

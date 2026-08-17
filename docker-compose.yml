@@ -4,7 +4,7 @@ services:
     container_name: barracao_redis
     restart: unless-stopped
     ports:
-      - "${REDIS_PORT:-16379}:6379"
+      - "${REDIS_PORT:-16384}:6379"
     networks:
       - barracao_network
 
@@ -17,7 +17,7 @@ services:
       POSTGRES_USER: ${POSTGRES_USER:-barracao_user}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-BarracaoGourmet_2026}
     ports:
-      - "${POSTGRES_PORT:-15432}:5432"
+      - "${POSTGRES_PORT:-15437}:5432"
     volumes:
       - barracao_postgres_data:/var/lib/postgresql/data
     healthcheck:
@@ -40,16 +40,30 @@ services:
       postgres:
         condition: service_healthy
     env_file:
-      - backend/.env
+      # Opcional: em dev local o arquivo existe; no deploy da VPS as variaveis
+      # vem do .env da raiz, injetado pelo runner fora do controle do git.
+      - path: backend/.env
+        required: false
     environment:
       NODE_ENV: production
       PORT: 3333
       DATABASE_URL: postgresql://${POSTGRES_USER:-barracao_user}:${POSTGRES_PASSWORD:-BarracaoGourmet_2026}@postgres:5432/${POSTGRES_DB:-barracao_gourmet}?schema=public
-      CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:18086}
-      PUBLIC_BASE_URL: ${PUBLIC_BASE_URL:-http://localhost:18086}
+      CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:18091}
+      PUBLIC_BASE_URL: ${PUBLIC_BASE_URL:-http://localhost:18091}
       REDIS_URL: ${REDIS_URL:-redis://redis:6379}
+      JWT_SECRET: ${JWT_SECRET:-troque-este-segredo}
+      LOJA_ENDERECO_BASE: ${LOJA_ENDERECO_BASE:-}
+      LOJA_ENDERECO_RETIRADA: ${LOJA_ENDERECO_RETIRADA:-}
+      LOJA_LAT: ${LOJA_LAT:-}
+      LOJA_LON: ${LOJA_LON:-}
+      MERCADO_PAGO_ACCESS_TOKEN: ${MERCADO_PAGO_ACCESS_TOKEN:-}
+      MERCADO_PAGO_WEBHOOK_SECRET: ${MERCADO_PAGO_WEBHOOK_SECRET:-}
+      OPENROUTESERVICE_API_KEY: ${OPENROUTESERVICE_API_KEY:-}
+      AWESOMEAPI_API_KEY: ${AWESOMEAPI_API_KEY:-}
+      PUSHOVER_TOKEN: ${PUSHOVER_TOKEN:-}
+      PUSHOVER_USER: ${PUSHOVER_USER:-}
     ports:
-      - "${BACKEND_PORT:-13347}:3333"
+      - "${BACKEND_PORT:-13352}:3333"
     volumes:
       - barracao_uploads:/app/uploads
     networks:
@@ -66,7 +80,7 @@ services:
     depends_on:
       - backend
     ports:
-      - "${FRONTEND_PORT:-18086}:80"
+      - "${FRONTEND_PORT:-18091}:80"
     networks:
       - barracao_network
 

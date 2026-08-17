@@ -3,19 +3,25 @@ import { PrismaClient } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
+const commonsFileUrl = (fileName: string) =>
+  `https://commons.wikimedia.org/wiki/Special:FilePath/${encodeURIComponent(fileName)}`;
+
 const updates = [
-  { nome: 'Vinho Tinto Seco Reserva', imagemUrl: 'https://commons.wikimedia.org/wiki/Special:FilePath/Wine%20Bottles.jpg' },
-  { nome: 'Vinho Branco Chardonnay', imagemUrl: 'https://commons.wikimedia.org/wiki/Special:FilePath/JC%20Chardonnay.jpg' },
-  { nome: 'Espumante Brut', imagemUrl: 'https://commons.wikimedia.org/wiki/Special:FilePath/Schlumberger%20Sparkling%20Bottles.JPG' },
-  { nome: 'Vinho Rosé Provence', imagemUrl: 'https://commons.wikimedia.org/wiki/Special:FilePath/Adega%20de%20Borba%20Ros%C3%A9.jpg' },
-  { nome: 'Whisky Single Malt 12 Anos', imagemUrl: 'https://commons.wikimedia.org/wiki/Special:FilePath/Bowmore%20Single%20Malt%20Scotch%20Whisky%2012%20years%20old.jpg' },
-  { nome: 'Gin Premium London Dry', imagemUrl: 'https://commons.wikimedia.org/wiki/Special:FilePath/Roku%20Gin.jpg' },
-  { nome: 'Cerveja Artesanal IPA', imagemUrl: 'https://commons.wikimedia.org/wiki/Special:FilePath/%C3%86r%C3%B8%20India%20Pale%20Ale%20%2828592484470%29.jpg' },
-  { nome: 'Cerveja Artesanal Stout', imagemUrl: 'https://commons.wikimedia.org/wiki/Special:FilePath/D%20Mendocino%20Oatmeal%20Stout%20beer%20bottle%208286690116%20o.jpg' },
-  { nome: 'Água Mineral com Gás 500ml', imagemUrl: 'https://commons.wikimedia.org/wiki/Special:FilePath/Bottled%20water%20%286972595593%29.jpg' },
-  { nome: 'Tábua de Frios Premium', imagemUrl: 'https://commons.wikimedia.org/wiki/Special:FilePath/Charcuterie%20%26%20cheese%20board.jpg' },
-  { nome: 'Vinho do Porto Tawny', imagemUrl: 'https://commons.wikimedia.org/wiki/Special:FilePath/Over%2040%20years%20old%20Port.jpg' },
-  { nome: 'Cachaça Artesanal Envelhecida', imagemUrl: 'https://commons.wikimedia.org/wiki/Special:FilePath/Caipirinha%20and%20cacha%C3%A7a%20bottles%20-%20Brazil.png' },
+  { nome: 'Porção de Frango a Passarinho', imagemUrl: commonsFileUrl('Fried chicken pieces coated in sauce with sesame seeds 2025.jpg') },
+  { nome: 'Porção de Calabresa Acebolada', imagemUrl: commonsFileUrl('Platter meat and sausage with potato slices.jpg') },
+  { nome: 'Batata Frita com Cheddar e Bacon', imagemUrl: commonsFileUrl('French fries 3.jpg') },
+  { nome: 'Onion Rings Crocantes', imagemUrl: commonsFileUrl('Onion Rings - Gourmet Burger Kitchen 2023-10-03.jpg') },
+  { nome: 'Burger Barracão', imagemUrl: commonsFileUrl('Bacon Cheddar Burger (2121943498).jpg') },
+  { nome: 'X-Salada Artesanal', imagemUrl: commonsFileUrl('Hamburger sandwich.jpg') },
+  { nome: 'Picanha na Chapa', imagemUrl: commonsFileUrl('Grilled steak served with orange slices and sauce on wooden board - Flickr - nenadstojkovicart.jpg') },
+  { nome: 'Filé de Frango à Parmegiana', imagemUrl: commonsFileUrl('Chicken parmigiana.jpg') },
+  { nome: 'Chopp Pilsen 500ml', imagemUrl: commonsFileUrl('Thomaskirche Pils.jpg') },
+  { nome: 'Refrigerante Lata 350ml', imagemUrl: commonsFileUrl('Tumbler of cola with ice.jpg') },
+  { nome: 'Água Mineral 500ml', imagemUrl: commonsFileUrl('San Pellegrino 500ml bottle.jpg') },
+  { nome: 'Suco Natural de Laranja 500ml', imagemUrl: commonsFileUrl('Glass of Fresh Orange Juice.jpg') },
+  { nome: 'Caipirinha de Limão', imagemUrl: commonsFileUrl('Cocktail Caipirinha raw.jpg') },
+  { nome: 'Pudim de Leite Condensado', imagemUrl: commonsFileUrl('Homemade Flan.jpg') },
+  { nome: 'Petit Gateau de Chocolate', imagemUrl: commonsFileUrl('Piece of chocolate cake on a white plate decorated with chocolate sauce.jpg') },
 ];
 
 async function main() {

@@ -1418,36 +1418,12 @@ function CardapioConfigTab() {
     onError: (err: any) => toast.error(err.message),
   });
 
-  const importarPods = useMutation({
-    mutationFn: () => api.post<any>("/api/estoque/importar-pods", {}),
-    onSuccess: (resultado) => {
-      queryClient.invalidateQueries({ queryKey: ["estoque"] });
-      queryClient.invalidateQueries({ queryKey: ["cardapio-publico"] });
-      queryClient.invalidateQueries({ queryKey: ["estoque-categorias"] });
-      queryClient.invalidateQueries({ queryKey: ["estoque-categorias-detalhes"] });
-      toast.success(
-        `Importacao concluida: ${resultado?.processados ?? 0} processados, ${resultado?.criados ?? 0} criados, ${resultado?.atualizados ?? 0} atualizados.`,
-      );
-    },
-    onError: (err: any) => toast.error(err.message),
-  });
-
   const categorias = [...new Set(produtos.map((p: any) => p.categoria))].sort();
 
   return (
     <div className="space-y-4">
       <div className="flex items-start justify-between gap-3 flex-wrap">
         <p className="text-sm text-muted-foreground">Gerencie quais produtos aparecem no cardapio digital publico.</p>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => {
-            if (confirm("Importar/atualizar todos os produtos de Pod agora?")) importarPods.mutate();
-          }}
-          disabled={importarPods.isPending}
-        >
-          {importarPods.isPending ? "Importando Pods..." : "Importar Pods"}
-        </Button>
       </div>
       {categorias.map(cat => (
         <Card key={cat}>

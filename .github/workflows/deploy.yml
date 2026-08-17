@@ -1,0 +1,31 @@
+name: deploy
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: [self-hosted, barracao-vps]
+    concurrency:
+      group: barracao-gourmet-deploy
+      cancel-in-progress: false
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # actions/checkout roda git clean e apaga arquivos nao versionados, entao os
+      # segredos ficam fora do repo e sao copiados a cada deploy.
+      - name: Injetar variaveis de ambiente
+        run: |
+          cp /root/barracao-secrets/root.env .env
+          cp /root/barracao-secrets/backend.env backend/.env
+
+      # As migrations rodam sozinhas: backend/docker-entrypoint.sh executa
+      # "prisma migrate deploy" antes de subir a API.
+      - name: Build e subir containers
+        run: docker compose up -d --build --remove-orphans
+
+      - name: Limpar imagens antigas
+        run: docker image prune -f

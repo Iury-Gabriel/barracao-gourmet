@@ -94,10 +94,3 @@ export async function excluirCategoria(req: Request, res: Response, next: NextFu
     res.status(204).send();
   } catch (err) { next(err); }
 }
-
-export async function importarPods(req: Request, res: Response, next: NextFunction) {
-  try {
-    const resultado = await estoqueService.importarPodsCategoria();
-    res.json(resultado);
-  } catch (err) { next(err); }
-}
