@@ -22,7 +22,11 @@ export const ENDERECO_RETIRADA_LOJA = config.lojaEnderecoRetirada;
 export const MENSAGEM_FORA_DE_AREA = `Consegue chamar um Uber Flash ou 99 na ${ENDERECO_RETIRADA_LOJA} pra retirar seu pedido aqui e levar no seu endereço?`;
 
 export function calcularFretePorDistanciaKm(distanciaKm: number) {
-  if (!Number.isFinite(distanciaKm) || distanciaKm <= 0) {
+  // Distancia 0 e valida: cliente na mesma rua da loja, ou geocodificado no
+  // mesmo ponto. Quem nao consegue geocodificar lanca erro antes de chegar aqui,
+  // entao 0 aqui significa "muito perto", nao "falhou". Rejeitar 0 barrava
+  // pedido legitimo de vizinho, o que ficou comum com o raio de 5km.
+  if (!Number.isFinite(distanciaKm) || distanciaKm < 0) {
     return { atende: false, motivo: 'Distancia invalida para calcular frete.' as string, frete: 0, acimaDoLimite: false };
   }
 
