@@ -104,6 +104,7 @@ model Cliente {
 
   pedidos    Pedido[]
   interacoes InteracaoCliente[]
+  reservas   Reserva[]
 
   @@map("clientes")
 }
@@ -358,4 +359,31 @@ model AtendimentoIa {
 
   @@unique([instanciaId, remetente])
   @@map("atendimentos_ia")
+}
+
+// ===== MÓDULO SALÃO =====
+
+// Reserva de mesa. O salao nao tem comanda digital nem controle de mesas: a
+// Linda so registra a reserva pelo WhatsApp e a equipe confirma. Por isso aqui
+// nao ha vinculo com Mesa nem com Pedido.
+model Reserva {
+  id           String   @id @default(uuid())
+  nomeCliente  String
+  telefone     String
+  pessoas      Int
+  dataHora     DateTime // data e hora da reserva
+  observacoes  String?
+  // PENDENTE = registrada pela IA, aguardando a equipe confirmar
+  // CONFIRMADA | CANCELADA | CONCLUIDA (cliente compareceu)
+  status       String   @default("PENDENTE")
+  // WHATSAPP_IA quando veio da Linda; MANUAL quando a equipe cadastrou
+  origem       String   @default("WHATSAPP_IA")
+  clienteId    String?
+  cliente      Cliente? @relation(fields: [clienteId], references: [id])
+  criadoEm     DateTime @default(now())
+  atualizadoEm DateTime @updatedAt
+
+  @@index([dataHora])
+  @@index([status])
+  @@map("reservas")
 }

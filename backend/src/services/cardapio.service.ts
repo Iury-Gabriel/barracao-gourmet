@@ -2,6 +2,7 @@ import { prisma } from '../lib/prisma';
 import {
   COORDENADAS_BASE_LOJA,
   LIMITE_KM_ENTREGA,
+  SUBTOTAL_ENTREGA_GRATIS,
   calcularDistanciaHaversineKm,
   calcularDistanciaRotaKm,
   calcularFretePorDistanciaKm,
@@ -629,14 +630,18 @@ export async function criarPedidoCardapio(data: {
     throw { status: 400, message: motivo || 'Endereco fora da area de entrega.' };
   }
 
-  // Cliente com isencao de frete no cadastro nao paga entrega.
-  const entregaGratis =
+  // Duas isencoes de frete: cliente marcado como isento no cadastro, ou pedido
+  // que atinge o subtotal minimo de entrega gratis. A checagem e feita aqui, no
+  // backend, para que nem o cardapio nem o painel consigam cobrar frete indevido.
+  const entregaGratisPorCliente =
     data.tipo === 'DELIVERY' &&
     (await clienteTemEntregaGratis({
       clienteId,
       telefone: data.telefoneCliente,
       email: data.emailCliente,
     }));
+  const entregaGratisPorValor = data.tipo === 'DELIVERY' && total >= SUBTOTAL_ENTREGA_GRATIS;
+  const entregaGratis = entregaGratisPorCliente || entregaGratisPorValor;
   const valorFrete = entregaGratis ? 0 : freteInfo.frete || 0;
 
   const pagamento = data.pagamento || 'PENDENTE';
@@ -852,14 +857,27 @@ export async function calcularFreteCardapio(data: {
   cepEntrega?: string;
   telefoneCliente?: string;
   emailCliente?: string;
+  // Subtotal dos produtos. Quando informado, a cotacao ja reflete a entrega
+  // gratis por valor; sem isso a IA cotaria frete e o pedido sairia zerado.
+  subtotal?: number;
 }) {
   const freteInfo = await calcularFreteAutomatico(data.enderecoEntrega, data.cepEntrega);
-  const entregaGratis =
+  const entregaGratisPorCliente =
     freteInfo.atende &&
     (await clienteTemEntregaGratis({ telefone: data.telefoneCliente, email: data.emailCliente }));
+  const entregaGratisPorValor =
+    freteInfo.atende && Number(data.subtotal || 0) >= SUBTOTAL_ENTREGA_GRATIS;
+  const entregaGratis = entregaGratisPorCliente || entregaGratisPorValor;
 
-  if (!entregaGratis) return { ...freteInfo, entregaGratis: false };
-  return { ...freteInfo, frete: 0, entregaGratis: true };
+  if (!entregaGratis) {
+    return { ...freteInfo, entregaGratis: false, subtotalEntregaGratis: SUBTOTAL_ENTREGA_GRATIS };
+  }
+  return {
+    ...freteInfo,
+    frete: 0,
+    entregaGratis: true,
+    motivoEntregaGratis: entregaGratisPorValor ? 'SUBTOTAL_MINIMO' : 'CLIENTE_ISENTO',
+  };
 }
 
 function soDigitos(s?: string) {

@@ -41,6 +41,7 @@ import LancamentosFinanceiroPage from "./pages/financeiro/LancamentosFinanceiroP
 // Custos
 
 // Gestão
+import ReservasPage from "./pages/salao/ReservasPage";
 import OperacionalPage from "./pages/OperacionalPage";
 import DashboardPage from "./pages/DashboardPage";
 import AutomacoesPage from "./pages/AutomacoesPage";
@@ -91,6 +92,7 @@ const App = () => (
                   <Route path="/pedidos/kpis" element={<ProtectedRoute permission="aba_pedidos_kpis"><KpisPedidosPage /></ProtectedRoute>} />
                   <Route path="/pedidos/:id" element={<ProtectedRoute permission="aba_pedidos_pipeline"><PedidoDetailPage /></ProtectedRoute>} />
                   <Route path="/operacional" element={<ProtectedRoute permission="aba_pedidos_operacional"><OperacionalPage /></ProtectedRoute>} />
+                  <Route path="/reservas" element={<ProtectedRoute permission="aba_salao_reservas"><ReservasPage /></ProtectedRoute>} />
                   <Route path="/entrega" element={<ProtectedRoute permission="aba_pedidos_entrega"><EntregaPage /></ProtectedRoute>} />
 
                   {/* Módulo Estoque */}

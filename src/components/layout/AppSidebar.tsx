@@ -5,6 +5,7 @@ import {
   Plus, History, Activity, AlertTriangle, ArrowUpDown,
   DollarSign, Truck, TrendingUp, Tag,
   UserCheck, MessageSquare, MessageCircle,
+  CalendarDays,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -29,6 +30,7 @@ const pedidosItems: NavItem[] = [
   { to: "/operacional",       label: "Painel Operacional",  icon: Activity,      permission: "aba_pedidos_operacional" },
   { to: "/entrega",           label: "Controle de Entrega", icon: Truck,         permission: "aba_pedidos_entrega" },
   { to: "/pedidos/kpis",      label: "KPIs de Pedidos",     icon: TrendingUp,    permission: "aba_pedidos_kpis" },
+  { to: "/reservas",          label: "Reservas de Mesa",    icon: CalendarDays,  permission: "aba_salao_reservas" },
 ];
 
 const estoqueItems: NavItem[] = [

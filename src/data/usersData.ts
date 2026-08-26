@@ -31,6 +31,8 @@ export type TabPermissionKey =
   | 'aba_gestao_kpis'
   | 'aba_gestao_automacoes'
   | 'aba_gestao_configuracoes'
+  // Módulo Salão
+  | 'aba_salao_reservas'
   // Módulo WhatsApp
   | 'aba_whatsapp_atendimentos';
 
@@ -53,6 +55,7 @@ export const permissionGroups: TabPermissionGroup[] = [
       { key: 'aba_pedidos_operacional', label: 'Painel Operacional' },
       { key: 'aba_pedidos_entrega',     label: 'Controle de Entrega' },
       { key: 'aba_pedidos_kpis',        label: 'KPIs de Pedidos' },
+      { key: 'aba_salao_reservas',      label: 'Reservas de Mesa' },
     ],
   },
   {
@@ -131,6 +134,7 @@ export const perfilPermissoes: Record<string, TabPermissionKey[]> = {
   GERENTE: [
     'aba_pedidos_pipeline', 'aba_pedidos_novo', 'aba_pedidos_historico',
     'aba_pedidos_operacional', 'aba_pedidos_entrega', 'aba_pedidos_kpis',
+    'aba_salao_reservas',
     'aba_estoque_produtos', 'aba_estoque_categorias', 'aba_estoque_movimentacoes', 'aba_estoque_alertas',
     'aba_clientes_base', 'aba_clientes_recorrencia', 'aba_clientes_interacoes',
     'aba_financeiro_visao', 'aba_financeiro_lancamentos',
@@ -141,6 +145,7 @@ export const perfilPermissoes: Record<string, TabPermissionKey[]> = {
   ],
   OPERADOR: [
     'aba_pedidos_pipeline', 'aba_pedidos_novo', 'aba_pedidos_operacional', 'aba_pedidos_entrega',
+    'aba_salao_reservas',
     'aba_estoque_produtos', 'aba_estoque_alertas',
     'aba_clientes_base',
     'aba_gestao_configuracoes',

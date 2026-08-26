@@ -10,7 +10,14 @@ export const COORDENADAS_BASE_LOJA = {
 };
 
 // Limite de distancia para delivery proprio. Acima disso, oferecemos retirada (no balcao ou via Uber Flash/99).
-export const LIMITE_KM_ENTREGA = 12;
+export const LIMITE_KM_ENTREGA = 5;
+
+// Pedido a partir deste subtotal (produtos, sem frete) sai com entrega gratis.
+export const SUBTOTAL_ENTREGA_GRATIS = 200;
+
+// Ate esta distancia a Linda pode oferecer entrega gratis como cortesia para
+// cliente que pede desconto (regra de negocio informada no onboarding).
+export const LIMITE_KM_CORTESIA_FRETE_GRATIS = 2;
 export const ENDERECO_RETIRADA_LOJA = config.lojaEnderecoRetirada;
 export const MENSAGEM_FORA_DE_AREA = `Consegue chamar um Uber Flash ou 99 na ${ENDERECO_RETIRADA_LOJA} pra retirar seu pedido aqui e levar no seu endereço?`;
 
@@ -30,12 +37,11 @@ export function calcularFretePorDistanciaKm(distanciaKm: number) {
     };
   }
 
-  if (distanciaKm <= 2.5) return { atende: true, frete: 8, acimaDoLimite: false };
-  if (distanciaKm <= 4.5) return { atende: true, frete: 12, acimaDoLimite: false };
-  if (distanciaKm <= 6) return { atende: true, frete: 15, acimaDoLimite: false };
-  if (distanciaKm <= 7) return { atende: true, frete: 18, acimaDoLimite: false };
-  if (distanciaKm <= 9) return { atende: true, frete: 21, acimaDoLimite: false };
-  return { atende: true, frete: 30, acimaDoLimite: false };
+  // Faixas por distancia (raio maximo de 5km).
+  if (distanciaKm <= 2) return { atende: true, frete: 4, acimaDoLimite: false };
+  if (distanciaKm <= 3) return { atende: true, frete: 5, acimaDoLimite: false };
+  if (distanciaKm <= 4) return { atende: true, frete: 6, acimaDoLimite: false };
+  return { atende: true, frete: 8, acimaDoLimite: false };
 }
 
 export function calcularDistanciaHaversineKm(

@@ -19,6 +19,7 @@ import uploadRoutes from './routes/upload.routes';
 import iaRoutes from './routes/ia.routes';
 import webhookRoutes from './routes/webhook.routes';
 import atendimentosRoutes from './routes/atendimentos.routes';
+import reservasRoutes from './routes/reservas.routes';
 import lojaRoutes from './routes/loja.routes';
 import cuponsRoutes from './routes/cupons.routes';
 import { getMercadoPagoWebhookUrl } from './services/mercado-pago.service';
@@ -77,6 +78,7 @@ app.use('/api/webhook', webhookRoutes);
 app.use('/api/atendimentos', atendimentosRoutes);
 app.use('/api/loja', lojaRoutes);
 app.use('/api/cupons', cuponsRoutes);
+app.use('/api/reservas', reservasRoutes);
 
 // Health check
 app.get('/api/health', (_req, res) => {

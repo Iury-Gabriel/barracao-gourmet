@@ -13,11 +13,13 @@ export const config = {
   redisUrl: process.env.REDIS_URL || 'redis://localhost:6379',
   redisKeyPrefix: process.env.REDIS_KEY_PREFIX || 'barracao',
   // Endereco base da loja — origem de todo calculo de frete/distancia.
-  // TROQUE pelo endereco real do Barracao Gourmet no .env antes de subir para producao.
-  lojaEnderecoBase: process.env.LOJA_ENDERECO_BASE || 'Rua Dino Borgioli, 536, Vila Campo Grande, Sao Paulo, SP, Brasil',
-  lojaEnderecoRetirada: process.env.LOJA_ENDERECO_RETIRADA || 'Rua Dino Borgioli, 536 A',
-  lojaLat: Number(process.env.LOJA_LAT || -23.6798252),
-  lojaLon: Number(process.env.LOJA_LON || -46.6776943),
+  // Coordenadas conferidas em duas fontes (AwesomeAPI e Nominatim) para o CEP 04675-130.
+  lojaEnderecoBase:
+    process.env.LOJA_ENDERECO_BASE ||
+    'Rua Olga Genioli Leite, 50, Jurubatuba, Sao Paulo, SP, Brasil',
+  lojaEnderecoRetirada: process.env.LOJA_ENDERECO_RETIRADA || 'Rua Olga Genioli Leite, 50',
+  lojaLat: Number(process.env.LOJA_LAT || -23.6710842),
+  lojaLon: Number(process.env.LOJA_LON || -46.6972821),
   webhookDebounceSeconds: Number(process.env.WEBHOOK_DEBOUNCE_SECONDS || 10),
   webhookDebouncePollMs: Number(process.env.WEBHOOK_DEBOUNCE_POLL_MS || 1000),
   // IA
