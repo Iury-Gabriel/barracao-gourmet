@@ -125,7 +125,7 @@ export function AppSidebar() {
       {/* Mobile Header */}
       <div className="fixed top-0 left-0 right-0 z-50 flex h-14 items-center justify-between border-b border-border bg-sidebar px-4 lg:hidden">
         <div className="flex items-center gap-2">
-          <img src="/logo.svg" alt="Barracão Gourmet" className="h-6 w-6 rounded object-contain" />
+          <img src="/logo.png" alt="Barracão Gourmet" className="h-6 w-6 rounded object-contain" />
           <span className="text-sm font-bold text-sidebar-foreground">Barracão Gourmet</span>
         </div>
         <Button variant="ghost" size="icon" onClick={() => setIsMobileOpen(!isMobileOpen)}
@@ -156,7 +156,7 @@ export function AppSidebar() {
           {!isCollapsed && (
             <>
               <div className="flex items-center gap-2 flex-1 min-w-0 px-1">
-                <img src="/logo.svg" alt="Barracão Gourmet" className="h-7 w-7 rounded object-contain flex-shrink-0" />
+                <img src="/logo.png" alt="Barracão Gourmet" className="h-7 w-7 rounded object-contain flex-shrink-0" />
                 <div className="min-w-0">
                   <p className="text-sm font-bold text-sidebar-foreground leading-tight truncate">Barracão Gourmet</p>
                   <p className="text-[10px] text-sidebar-muted leading-tight">Sistema de Gestão</p>

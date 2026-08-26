@@ -1049,7 +1049,7 @@ export default function CardapioPage() {
       <header className="sticky top-0 z-40 border-b border-white/10 bg-marrom-950/95 text-white shadow-sm backdrop-blur">
         <div className="max-w-5xl mx-auto px-4 h-16 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <img src="/logo.svg" alt="Barracão Gourmet" className="h-10 w-10 object-contain" />
+            <img src="/logo.png" alt="Barracão Gourmet" className="h-10 w-10 object-contain" />
             <div>
               <p className="font-bold leading-tight text-white">Barracão Gourmet</p>
               <p className="text-xs text-marrom-300">Cardápio Digital</p>

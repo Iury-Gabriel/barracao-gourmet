@@ -32,7 +32,7 @@ export default function LoginPage() {
         <div className="mb-6 flex flex-col items-center justify-center gap-3">
           <div className="h-40 w-40 overflow-hidden rounded-full bg-white shadow-sm ring-1 ring-border">
             <img
-              src="/logo.svg"
+              src="/logo.png"
               alt="Barracão Gourmet"
               className="h-full w-full scale-110 object-cover"
             />
