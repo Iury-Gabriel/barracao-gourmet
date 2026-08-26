@@ -3,10 +3,8 @@ import {
   ShoppingCart, Package, Users, BarChart3,
   Settings, PanelLeftClose, PanelLeft, Menu, X,
   Plus, History, Activity, AlertTriangle, ArrowUpDown,
-  DollarSign, Coins,
-  Truck, TrendingUp, Tag,
-  UserCheck, MessageSquare, LineChart, Contact,
-  MessageCircle,
+  DollarSign, Truck, TrendingUp, Tag,
+  UserCheck, MessageSquare, MessageCircle,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -47,12 +45,17 @@ const clientesItems: NavItem[] = [
 ];
 
 const gestaoItems: NavItem[] = [
-  { to: "/dashboard",           label: "Dashboard Executivo", icon: BarChart3,      permission: "aba_gestao_dashboard" },
-  { to: "/gestao/clientes",     label: "Clientes Ativos",     icon: Contact,        permission: "aba_gestao_clientes" },
-  { to: "/gestao/financeira",   label: "Gestão Financeira",   icon: DollarSign,     permission: "aba_gestao_financeira" },
+  // Dashboard absorve "KPIs & Indicadores" (o unico grafico exclusivo dele, Origem
+  // dos Pedidos, foi para la; o resto ja se repetia aqui ou em /pedidos/kpis).
+  // Financeiro funde "Gestao Financeira" + "Custos" em sub-abas.
+  // "Clientes Ativos" saiu por duplicar a Base de Clientes do modulo Clientes.
+  { to: "/dashboard",           label: "Dashboard",           icon: BarChart3,      permission: "aba_gestao_dashboard" },
+  { to: "/gestao/financeira",   label: "Financeiro",          icon: DollarSign,     permission: "aba_gestao_financeira" },
   { to: "/gestao/projecao",     label: "Projeção",            icon: TrendingUp,     permission: "aba_gestao_projecao" },
-  { to: "/custos",              label: "Custos",              icon: Coins,          permission: "aba_custos_painel" },
-  { to: "/gestao/kpis",         label: "KPIs & Indicadores",  icon: LineChart,      permission: "aba_gestao_kpis" },
+  // Configuracoes tambem tem a engrenagem no rodape, mas o rodape e facil de nao
+  // achar. Aqui aparece como item normal, no modulo em que a rota ja era
+  // classificada pelo resolvedModuleId.
+  { to: "/configuracoes",       label: "Configurações",       icon: Settings,       permission: "aba_gestao_configuracoes" },
 ];
 
 const whatsappItems: NavItem[] = [

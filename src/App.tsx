@@ -39,14 +39,12 @@ import FinanceiroPage from "./pages/financeiro/FinanceiroPage";
 import LancamentosFinanceiroPage from "./pages/financeiro/LancamentosFinanceiroPage";
 
 // Custos
-import CustosPage from "./pages/custos/CustosPage";
 
 // Gestão
 import OperacionalPage from "./pages/OperacionalPage";
 import DashboardPage from "./pages/DashboardPage";
 import AutomacoesPage from "./pages/AutomacoesPage";
 import ConfiguracoesPage from "./pages/ConfiguracoesPage";
-import KpisGestaoPage from "./pages/gestao/KpisGestaoPage";
 import ProjecaoGestaoPage from "./pages/gestao/ProjecaoGestaoPage";
 
 // WhatsApp
@@ -111,15 +109,18 @@ const App = () => (
                   {/* Módulo Gestão */}
                   <Route path="/dashboard" element={<ProtectedRoute permission="aba_gestao_dashboard"><DashboardPage /></ProtectedRoute>} />
                   <Route path="/gestao" element={<Navigate to="/dashboard" replace />} />
-                  <Route path="/gestao/clientes" element={<ProtectedRoute permission="aba_gestao_clientes"><ClientesPage /></ProtectedRoute>} />
+                  {/* Duplicava a Base de Clientes; mantido como redirect para nao quebrar link salvo. */}
+                  <Route path="/gestao/clientes" element={<Navigate to="/clientes" replace />} />
                   <Route path="/gestao/financeira" element={<ProtectedRoute permission="aba_gestao_financeira"><FinanceiroPage /></ProtectedRoute>} />
                   <Route path="/gestao/projecao" element={<ProtectedRoute permission="aba_gestao_projecao"><ProjecaoGestaoPage /></ProtectedRoute>} />
-                  <Route path="/gestao/kpis" element={<ProtectedRoute permission="aba_gestao_kpis"><KpisGestaoPage /></ProtectedRoute>} />
+                  {/* KPIs & Indicadores foi absorvido pelo Dashboard. */}
+                  <Route path="/gestao/kpis" element={<Navigate to="/dashboard" replace />} />
                   <Route path="/financeiro" element={<ProtectedRoute permission="aba_financeiro_visao"><FinanceiroPage /></ProtectedRoute>} />
                   <Route path="/financeiro/lancamentos" element={<ProtectedRoute permission="aba_financeiro_lancamentos"><LancamentosFinanceiroPage /></ProtectedRoute>} />
-                  <Route path="/custos" element={<ProtectedRoute permission="aba_custos_painel"><CustosPage /></ProtectedRoute>} />
-                  <Route path="/custos/produtos" element={<ProtectedRoute permission="aba_custos_produtos"><CustosPage /></ProtectedRoute>} />
-                  <Route path="/custos/lancamentos" element={<ProtectedRoute permission="aba_custos_painel"><CustosPage /></ProtectedRoute>} />
+                  {/* Custos virou sub-aba do Financeiro. */}
+                  <Route path="/custos" element={<Navigate to="/gestao/financeira" replace />} />
+                  <Route path="/custos/produtos" element={<Navigate to="/gestao/financeira?aba=custos-produto" replace />} />
+                  <Route path="/custos/lancamentos" element={<Navigate to="/gestao/financeira?aba=custos-operacional" replace />} />
                   <Route path="/automacoes" element={<ProtectedRoute permission="aba_gestao_automacoes"><AutomacoesPage /></ProtectedRoute>} />
                   <Route path="/configuracoes" element={<ProtectedRoute permission="aba_gestao_configuracoes"><ConfiguracoesPage /></ProtectedRoute>} />
 

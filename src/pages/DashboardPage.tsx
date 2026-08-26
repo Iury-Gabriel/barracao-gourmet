@@ -10,10 +10,20 @@ import {
   ShoppingCart, DollarSign, TrendingUp, Package, Users,
   AlertTriangle, BarChart3, Clock, Eye, ArrowUpRight,
 } from "lucide-react";
-import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
+import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from "recharts";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import UnifiedPeriodFilter, { UnifiedPeriod, getRangeFromFilter } from "@/components/shared/UnifiedPeriodFilter";
+
+// Origem dos pedidos: veio de "KPIs & Indicadores", absorvido pelo Dashboard.
+const ORIGEM_CORES = ["hsl(var(--primary))", "#10b981", "#f59e0b", "#ef4444", "#8b5cf6"];
+const ORIGEM_LABEL: Record<string, string> = {
+  CARDAPIO_DIGITAL: "Cardapio digital",
+  CATALOGO: "Cardapio digital",
+  MANUAL: "Manual",
+  WHATSAPP: "WhatsApp",
+  TESTE: "Teste",
+};
 
 function fmt(v: number) {
   return v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
@@ -81,7 +91,22 @@ export default function DashboardPage() {
   const topProdutos = Object.values(produtoVendas).sort((a, b) => b.qtd - a.qtd);
   const top5Produtos = topProdutos.slice(0, 5);
 
+  // Origem dos pedidos: derivado dos pedidos ja carregados, sem chamada extra.
+  const origemContagem: Record<string, number> = {};
+  for (const p of pedidos) {
+    const k = p.origem || "MANUAL";
+    origemContagem[k] = (origemContagem[k] || 0) + 1;
+  }
+  const origemData = Object.entries(origemContagem)
+    .map(([k, v]) => ({ name: ORIGEM_LABEL[k] ?? k, value: v as number }))
+    .sort((a, b) => b.value - a.value);
+
   const recorrentes = clientes.filter((c: any) => c.totalPedidos >= 3).length;
+  const novos30d = clientes.filter((c: any) => {
+    if (!c.criadoEm) return false;
+    return (Date.now() - new Date(c.criadoEm).getTime()) / (1000 * 60 * 60 * 24) <= 30;
+  }).length;
+
   const inativos = clientes.filter((c: any) => {
     if (!c.ultimoPedido) return c.totalPedidos > 0;
     return (Date.now() - new Date(c.ultimoPedido).getTime()) / (1000 * 60 * 60 * 24) > 30;
@@ -189,6 +214,32 @@ export default function DashboardPage() {
             )}
           </CardContent>
         </Card>
+
+        <Card>
+          <CardHeader><CardTitle className="text-base">Origem dos Pedidos</CardTitle></CardHeader>
+          <CardContent>
+            {origemData.length === 0 ? (
+              <div className="flex items-center justify-center h-40 text-muted-foreground text-sm">Sem dados</div>
+            ) : (
+              <ResponsiveContainer width="100%" height={240}>
+                <PieChart>
+                  <Pie
+                    data={origemData}
+                    cx="50%"
+                    cy="50%"
+                    outerRadius={80}
+                    dataKey="value"
+                    label={({ name, percent }) => `${name} ${((percent ?? 0) * 100).toFixed(0)}%`}
+                    labelLine={false}
+                  >
+                    {origemData.map((_, i) => <Cell key={i} fill={ORIGEM_CORES[i % ORIGEM_CORES.length]} />)}
+                  </Pie>
+                  <Tooltip contentStyle={{ background: "hsl(var(--popover))", border: "1px solid hsl(var(--border))", borderRadius: 8, color: "hsl(var(--popover-foreground))" }} />
+                </PieChart>
+              </ResponsiveContainer>
+            )}
+          </CardContent>
+        </Card>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -206,6 +257,10 @@ export default function DashboardPage() {
             <div className="flex items-center justify-between">
               <span className="text-sm text-muted-foreground">Inativos (+30 dias)</span>
               <Badge className="bg-red-100 text-red-700">{inativos}</Badge>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-muted-foreground">Novos (30 dias)</span>
+              <Badge className="bg-blue-100 text-blue-700">{novos30d}</Badge>
             </div>
             <Button variant="outline" size="sm" className="w-full" onClick={() => navigate("/clientes")}>
               Ver todos os clientes
