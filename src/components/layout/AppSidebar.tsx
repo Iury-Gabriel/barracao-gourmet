@@ -6,6 +6,7 @@ import {
   DollarSign, Truck, TrendingUp, Tag,
   UserCheck, MessageSquare, MessageCircle,
   CalendarDays,
+  Store,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -26,6 +27,7 @@ interface NavItem {
 const pedidosItems: NavItem[] = [
   { to: "/pedidos",           label: "Pipeline",            icon: ShoppingCart,  permission: "aba_pedidos_pipeline" },
   { to: "/pedidos/novo",      label: "Novo Pedido",         icon: Plus,          permission: "aba_pedidos_novo" },
+  { to: "/pedidos/novo?tipo=LOCAL", label: "Venda no Balcão", icon: Store,     permission: "aba_pedidos_novo" },
   { to: "/pedidos/historico", label: "Histórico",           icon: History,       permission: "aba_pedidos_historico" },
   { to: "/operacional",       label: "Painel Operacional",  icon: Activity,      permission: "aba_pedidos_operacional" },
   { to: "/entrega",           label: "Controle de Entrega", icon: Truck,         permission: "aba_pedidos_entrega" },
@@ -73,6 +75,16 @@ interface ModuleDef {
   items: NavItem[];
 }
 
+// Caminhos que aparecem no menu tanto puros quanto com query string
+// (ex: /pedidos/novo e /pedidos/novo?tipo=LOCAL). Serve para o item sem query
+// nao roubar o destaque do item com query.
+const mod_items_com_query = new Set(
+  [pedidosItems, estoqueItems, clientesItems, gestaoItems, whatsappItems]
+    .flat()
+    .filter((i) => i.to.includes('?'))
+    .map((i) => i.to.split('?')[0]),
+);
+
 const modules: ModuleDef[] = [
   { id: 'pedidos',  label: 'Pedidos',  icon: ShoppingCart, permissionModule: 'pedidos',  defaultRoute: '/pedidos',          items: pedidosItems },
   { id: 'estoque',  label: 'Estoque',  icon: Package,      permissionModule: 'estoque',  defaultRoute: '/estoque/produtos', items: estoqueItems },
@@ -113,11 +125,32 @@ export function AppSidebar() {
   };
 
   const isNavActive = (item: NavItem) => {
-    if (location.pathname === item.to) return true;
+    // Itens com query string (ex: /pedidos/novo?tipo=LOCAL) precisam casar tambem
+    // pela query, senao "Novo Pedido" e "Venda no Balcao" apontam para o mesmo
+    // caminho e o menu acende o item errado.
+    const [caminho, query] = item.to.split('?');
+    if (query) {
+      if (location.pathname !== caminho) return false;
+      const alvo = new URLSearchParams(query);
+      const atual = new URLSearchParams(location.search);
+      for (const [chave, valor] of alvo.entries()) {
+        if (atual.get(chave) !== valor) return false;
+      }
+      return true;
+    }
+
+    // Sem query no item: uma rota com query na barra de enderecos pertence ao
+    // item especifico, nao a este.
+    if (location.pathname === caminho) {
+      const temIrmaoComQuery = mod_items_com_query.has(location.pathname);
+      if (temIrmaoComQuery && location.search) return false;
+      return true;
+    }
+
     // exact-only routes — don't highlight parent for sub-routes
     const exactOnly = ['/pedidos', '/clientes', '/estoque/produtos', '/dashboard', '/financeiro', '/custos'];
-    if (exactOnly.includes(item.to)) return false;
-    return location.pathname.startsWith(item.to);
+    if (exactOnly.includes(caminho)) return false;
+    return location.pathname.startsWith(caminho);
   };
 
   return (

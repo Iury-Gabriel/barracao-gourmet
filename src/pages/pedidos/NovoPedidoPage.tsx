@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { api } from "@/hooks/useApi";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -50,7 +50,13 @@ export default function NovoPedidoPage() {
   const [cep, setCep] = useState("");
   const [endereco, setEndereco] = useState("");
   const [frete, setFrete] = useState("");
-  const [tipo, setTipo] = useState("DELIVERY");
+  // /pedidos/novo?tipo=LOCAL abre direto como venda de balcao, para o caixa
+  // nao precisar trocar o seletor a cada pedido.
+  const [searchParams] = useSearchParams();
+  const tipoInicial = (searchParams.get("tipo") || "DELIVERY").toUpperCase();
+  const [tipo, setTipo] = useState(
+    ["DELIVERY", "RETIRADA", "LOCAL"].includes(tipoInicial) ? tipoInicial : "DELIVERY",
+  );
   const [observacoes, setObservacoes] = useState("");
   const [carrinho, setCarrinho] = useState<ItemCarrinho[]>([]);
   const [busca, setBusca] = useState("");
@@ -332,15 +338,19 @@ export default function NovoPedidoPage() {
               <Input value={nomeCliente} onChange={(e) => setNomeCliente(e.target.value)} placeholder="Se deixar em branco, sera Desconhecido" />
             </div>
 
+            {/* O CEP so serve para calcular frete. Numa venda de balcao ou
+                retirada ele e ruido no caixa, entao some. */}
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               <div className="space-y-2">
                 <Label>Telefone</Label>
                 <Input value={telefone} onChange={(e) => setTelefone(e.target.value)} placeholder="Opcional" />
               </div>
-              <div className="space-y-2">
-                <Label>CEP</Label>
-                <Input value={cep} onChange={(e) => setCep(e.target.value)} placeholder="00000-000" />
-              </div>
+              {tipo === "DELIVERY" && (
+                <div className="space-y-2">
+                  <Label>CEP</Label>
+                  <Input value={cep} onChange={(e) => setCep(e.target.value)} placeholder="00000-000" />
+                </div>
+              )}
             </div>
 
             <div className="space-y-2">

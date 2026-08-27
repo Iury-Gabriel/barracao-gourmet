@@ -19,6 +19,14 @@ const STATUS_CONFIG = {
   EM_ENTREGA: { label: "Para entrega", color: "bg-purple-50 border-purple-200", badge: "bg-purple-100 text-purple-800", icon: Truck },
 };
 
+// A cozinha precisa saber o destino do pedido: o que vai para entrega sai da
+// bancada diferente do que o cliente leva no balcao.
+const TIPO_CONFIG: Record<string, { label: string; classe: string }> = {
+  DELIVERY: { label: "Entrega", classe: "border-purple-300 text-purple-700" },
+  RETIRADA: { label: "Retirada", classe: "border-blue-300 text-blue-700" },
+  LOCAL: { label: "Balcão", classe: "border-emerald-300 text-emerald-700" },
+};
+
 function fmt(v: number) {
   return v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 }
@@ -128,12 +136,41 @@ export default function OperacionalPage() {
                             {formatDistanceToNow(new Date(pedido.criadoEm), { locale: ptBR, addSuffix: true })}
                           </div>
                         </div>
-                        <p className="text-sm font-medium truncate">
-                          {pedido.cliente?.nome ?? pedido.nomeCliente ?? "Cliente não identificado"}
-                        </p>
-                        <p className="text-xs text-muted-foreground">
-                          {pedido.itens?.length ?? 0} iten{pedido.itens?.length !== 1 ? "s" : ""} · {fmt(pedido.total)}
-                        </p>
+                        <div className="flex items-center justify-between gap-2">
+                          <p className="text-sm font-medium truncate">
+                            {pedido.cliente?.nome ?? pedido.nomeCliente ?? "Sem nome"}
+                          </p>
+                          <Badge variant="outline" className={`shrink-0 text-[10px] ${TIPO_CONFIG[pedido.tipo]?.classe ?? ""}`}>
+                            {TIPO_CONFIG[pedido.tipo]?.label ?? pedido.tipo}
+                          </Badge>
+                        </div>
+
+                        {/* A cozinha precisa ver O QUE preparar. Antes o card so
+                            dizia "3 itens", o que nao servia para cozinhar. */}
+                        <ul className="space-y-0.5">
+                          {(pedido.itens ?? []).map((item: any) => (
+                            <li key={item.id} className="flex gap-1.5 text-sm leading-snug">
+                              <span className="font-bold tabular-nums">{item.quantidade}x</span>
+                              <span className="min-w-0">
+                                {item.produto?.nome ?? "Item"}
+                                {item.variacaoNome && (
+                                  <span className="text-muted-foreground"> ({item.variacaoNome})</span>
+                                )}
+                              </span>
+                            </li>
+                          ))}
+                          {(pedido.itens ?? []).length === 0 && (
+                            <li className="text-xs text-muted-foreground">Sem itens</li>
+                          )}
+                        </ul>
+
+                        {pedido.observacoes && (
+                          <p className="rounded bg-amber-100 px-2 py-1 text-xs font-medium text-amber-900">
+                            {pedido.observacoes}
+                          </p>
+                        )}
+
+                        <p className="text-xs text-muted-foreground">{fmt(pedido.total)}</p>
                         {getNextPedidoStatus(pedido) && (
                           <Button
                             size="sm"
