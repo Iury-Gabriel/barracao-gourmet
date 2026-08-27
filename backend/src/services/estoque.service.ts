@@ -34,6 +34,15 @@ function sanitizeVariacoes(variacoes?: ProdutoVariacaoInput[]) {
     .filter((variacao) => variacao.nome.length > 0);
 }
 
+// Dias em que o prato entra no cardapio. 0=domingo .. 6=sabado; vazio = todos.
+function sanitizeDiasSemana(dias?: number[]) {
+  if (!Array.isArray(dias)) return undefined;
+  const validos = dias
+    .map((d) => Number(d))
+    .filter((d) => Number.isInteger(d) && d >= 0 && d <= 6);
+  return Array.from(new Set(validos)).sort((a, b) => a - b);
+}
+
 function uniqueStrings(values: string[]) {
   return Array.from(new Set(values.filter(Boolean)));
 }
@@ -157,6 +166,7 @@ export async function criarProduto(data: {
   estoque?: number;
   estoqueMinimo?: number;
   disponivel?: boolean;
+  diasSemana?: number[];
   imagemUrl?: string;
   variacoes?: ProdutoVariacaoInput[];
 }) {
@@ -176,6 +186,7 @@ export async function criarProduto(data: {
       custoUltimaCompra: data.custoUltimaCompra ?? custoBase,
       estoque,
       estoqueMinimo: toNonNegativeInt(data.estoqueMinimo, 5),
+      diasSemana: sanitizeDiasSemana(data.diasSemana) ?? [],
       imagemUrl: normalizeImageUrl(data.imagemUrl) ?? undefined,
       variacoes: variacoes ? { create: variacoes } : undefined,
     },
@@ -195,6 +206,7 @@ export async function atualizarProduto(id: string, data: Partial<{
   estoque: number;
   estoqueMinimo: number;
   disponivel: boolean;
+  diasSemana: number[];
   imagemUrl: string;
   variacoes: ProdutoVariacaoInput[];
 }>) {
@@ -219,6 +231,7 @@ export async function atualizarProduto(id: string, data: Partial<{
       ...data,
       tipoVariacao: data.tipoVariacao !== undefined ? data.tipoVariacao?.trim() || null : undefined,
       controlaEstoquePorVariacao: data.controlaEstoquePorVariacao,
+      diasSemana: sanitizeDiasSemana(data.diasSemana),
       custoMedio: data.custoMedio,
       custoUltimaCompra: data.custoUltimaCompra,
       estoque,

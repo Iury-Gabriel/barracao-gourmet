@@ -45,6 +45,10 @@ model Produto {
   estoque        Int      @default(0)
   estoqueMinimo  Int      @default(5)
   disponivel     Boolean  @default(true)
+  // Dias em que o prato entra no cardapio do dia. 0=domingo .. 6=sabado.
+  // Vazio = todos os dias (ex: Churrasco). Mesmo padrao do Cupom.
+  // Nao esconde o produto: serve para a IA e o cardapio dizerem em que dia sai.
+  diasSemana     Int[]    @default([])
   imagemUrl      String?
   criadoEm      DateTime @default(now())
   atualizadoEm  DateTime @updatedAt

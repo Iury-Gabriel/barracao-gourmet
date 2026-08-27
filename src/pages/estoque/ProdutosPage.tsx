@@ -13,7 +13,7 @@ import { Switch } from "@/components/ui/switch";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { resolveImageUrl } from "@/lib/media";
 import { API_URL } from "@/lib/apiBaseUrl";
-import { AlertTriangle, Edit, ImagePlus, Plus, Search, Trash2, Wine } from "lucide-react";
+import { AlertTriangle, Edit, ImagePlus, Plus, Search, Trash2, UtensilsCrossed } from "lucide-react";
 import { toast } from "sonner";
 
 function fmt(v: number) {
@@ -27,6 +27,17 @@ type VariacaoForm = {
   estoqueMinimo: string;
 };
 
+// Cardapio do Barracao e prato do dia. Domingo fica de fora porque o
+// restaurante nao abre. Vazio = sai todos os dias (ex: Churrasco).
+const DIAS_SEMANA = [
+  { valor: 1, label: "Seg" },
+  { valor: 2, label: "Ter" },
+  { valor: 3, label: "Qua" },
+  { valor: 4, label: "Qui" },
+  { valor: 5, label: "Sex" },
+  { valor: 6, label: "Sáb" },
+];
+
 type ProdutoForm = {
   nome: string;
   descricao: string;
@@ -38,6 +49,7 @@ type ProdutoForm = {
   custoMedio: string;
   estoqueMinimo: string;
   disponivel: boolean;
+  diasSemana: number[];
   imagemUrl: string;
   variacoes: VariacaoForm[];
 };
@@ -75,6 +87,7 @@ const createEmptyForm = (): ProdutoForm => ({
   custoMedio: "",
   estoqueMinimo: "5",
   disponivel: true,
+  diasSemana: [],
   imagemUrl: "",
   variacoes: [],
 });
@@ -172,6 +185,7 @@ export default function ProdutosPage() {
       categoria: produto.categoria,
       tipoVariacao: produto.tipoVariacao ?? "",
       controlaEstoquePorVariacao: Boolean(produto.controlaEstoquePorVariacao),
+      diasSemana: Array.isArray(produto.diasSemana) ? produto.diasSemana : [],
       preco: String(produto.preco),
       estoque: String(produto.estoque),
       custoMedio: String(produto.custoMedio ?? 0),
@@ -261,6 +275,7 @@ export default function ProdutosPage() {
       ...form,
       tipoVariacao: form.tipoVariacao.trim() || undefined,
       controlaEstoquePorVariacao: form.controlaEstoquePorVariacao,
+      diasSemana: form.diasSemana,
       preco: Number(form.preco),
       custoMedio: Number(form.custoMedio || 0),
       estoque: Number(form.controlaEstoquePorVariacao ? estoqueTotalVariacoes : form.estoque),
@@ -363,7 +378,7 @@ export default function ProdutosPage() {
                         <img src={resolveImageUrl(produto.imagemUrl) ?? undefined} alt={produto.nome} className="h-10 w-10 rounded-lg object-cover" />
                       ) : (
                         <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-muted">
-                          <Wine className="h-4 w-4 text-muted-foreground" />
+                          <UtensilsCrossed className="h-4 w-4 text-muted-foreground" />
                         </div>
                       )}
                     </TableCell>
@@ -522,6 +537,37 @@ export default function ProdutosPage() {
                   <p className="mt-1 text-sm text-muted-foreground">Sabores com estoque igual ou abaixo do minimo configurado.</p>
                 </div>
               )}
+            </div>
+
+            <div className="rounded-md border bg-muted/30 p-3 space-y-2">
+              <Label>Dias em que este prato sai</Label>
+              <div className="flex flex-wrap gap-2">
+                {DIAS_SEMANA.map((dia) => {
+                  const marcado = form.diasSemana.includes(dia.valor);
+                  return (
+                    <Button
+                      key={dia.valor}
+                      type="button"
+                      size="sm"
+                      variant={marcado ? "default" : "outline"}
+                      onClick={() =>
+                        setForm((prev) => ({
+                          ...prev,
+                          diasSemana: marcado
+                            ? prev.diasSemana.filter((d) => d !== dia.valor)
+                            : [...prev.diasSemana, dia.valor].sort((a, b) => a - b),
+                        }))
+                      }
+                    >
+                      {dia.label}
+                    </Button>
+                  );
+                })}
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Nenhum dia marcado significa que sai todos os dias, como o churrasco. Isso nao esconde o
+                produto: serve para o atendimento saber em que dia oferecer.
+              </p>
             </div>
 
             <div className="rounded-md border bg-muted/30 p-3">

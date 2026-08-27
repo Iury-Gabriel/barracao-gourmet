@@ -28,6 +28,22 @@ const STOPWORDS_BUSCA = new Set([
   'manda', 'mandar', 'envia', 'enviar', 'passa', 'passar', 'todas', 'todos', 'opcao', 'opcoes',
 ]);
 
+// Cardapio do Barracao muda por dia da semana. Traduz o array do produto para
+// texto, para a IA conseguir dizer ao cliente em que dia o prato sai.
+const NOMES_DIAS = ['domingo', 'segunda', 'terca', 'quarta', 'quinta', 'sexta', 'sabado'];
+function descreverDiasSemana(dias?: number[] | null) {
+  if (!Array.isArray(dias) || dias.length === 0) return 'todos os dias';
+  if (dias.length >= 6) return 'todos os dias';
+  const nomes = [...dias].sort((a, b) => a - b).map((d) => NOMES_DIAS[d]).filter(Boolean);
+  if (nomes.length === 1) return nomes[0];
+  return `${nomes.slice(0, -1).join(', ')} e ${nomes[nomes.length - 1]}`;
+}
+
+function saiHoje(dias?: number[] | null) {
+  if (!Array.isArray(dias) || dias.length === 0) return true;
+  return dias.includes(new Date().getDay());
+}
+
 function formatBRL(value: number) {
   return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value || 0);
 }
@@ -511,6 +527,7 @@ async function responderCatalogoSemAlucinacao(mensagem: string) {
       descricao: true,
       tipoVariacao: true,
       controlaEstoquePorVariacao: true,
+      diasSemana: true,
       preco: true,
       estoque: true,
       variacoes: {
@@ -1035,6 +1052,7 @@ function criarToolsAtendimento(contexto: { mensagensUsuarioRecentes: string[] } 
           categoria: true,
           tipoVariacao: true,
           controlaEstoquePorVariacao: true,
+          diasSemana: true,
           preco: true,
           estoque: true,
           disponivel: true,
@@ -1071,6 +1089,8 @@ function criarToolsAtendimento(contexto: { mensagensUsuarioRecentes: string[] } 
         disponivel: p.disponivel && p.estoque > 0,
         imagemUrl: normalizeImageUrl(p.imagemUrl),
         sabores: Array.isArray(p.variacoes) ? p.variacoes.map((variacao) => variacao.nome).filter(Boolean) : [],
+        diasSemana: descreverDiasSemana((p as any).diasSemana),
+        saiHoje: saiHoje((p as any).diasSemana),
         variacoes: p.variacoes || [],
       }));
 
@@ -1104,6 +1124,7 @@ function criarToolsAtendimento(contexto: { mensagensUsuarioRecentes: string[] } 
             categoria: true,
             tipoVariacao: true,
             controlaEstoquePorVariacao: true,
+            diasSemana: true,
             preco: true,
             estoque: true,
             disponivel: true,
@@ -1134,6 +1155,7 @@ function criarToolsAtendimento(contexto: { mensagensUsuarioRecentes: string[] } 
             categoria: true,
             tipoVariacao: true,
             controlaEstoquePorVariacao: true,
+            diasSemana: true,
             preco: true,
             estoque: true,
             disponivel: true,
@@ -1165,6 +1187,8 @@ function criarToolsAtendimento(contexto: { mensagensUsuarioRecentes: string[] } 
               precoFormatado: formatBRL(p.preco),
               estoque: p.estoque,
               sabores: Array.isArray(p.variacoes) ? p.variacoes.map((variacao) => variacao.nome).filter(Boolean) : [],
+              diasSemana: descreverDiasSemana((p as any).diasSemana),
+              saiHoje: saiHoje((p as any).diasSemana),
               imagemUrl: normalizeImageUrl(p.imagemUrl),
             })),
           });
@@ -1194,6 +1218,8 @@ function criarToolsAtendimento(contexto: { mensagensUsuarioRecentes: string[] } 
         estoque: produto.estoque,
         disponivel: produto.disponivel && produto.estoque > 0,
         sabores: Array.isArray(produto.variacoes) ? produto.variacoes.map((variacao: any) => variacao.nome).filter(Boolean) : [],
+        diasSemana: descreverDiasSemana((produto as any).diasSemana),
+        saiHoje: saiHoje((produto as any).diasSemana),
         variacoes: produto.variacoes || [],
         imagemUrl: normalizeImageUrl(produto.imagemUrl),
       });
@@ -1240,6 +1266,7 @@ function criarToolsAtendimento(contexto: { mensagensUsuarioRecentes: string[] } 
               descricao: true,
               tipoVariacao: true,
               controlaEstoquePorVariacao: true,
+              diasSemana: true,
               preco: true,
               estoque: true,
               disponivel: true,
@@ -1268,6 +1295,7 @@ function criarToolsAtendimento(contexto: { mensagensUsuarioRecentes: string[] } 
               descricao: true,
               tipoVariacao: true,
               controlaEstoquePorVariacao: true,
+              diasSemana: true,
               preco: true,
               estoque: true,
               disponivel: true,
@@ -1540,6 +1568,7 @@ function criarToolsAtendimento(contexto: { mensagensUsuarioRecentes: string[] } 
               descricao: true,
               tipoVariacao: true,
               controlaEstoquePorVariacao: true,
+              diasSemana: true,
               preco: true,
               estoque: true,
               disponivel: true,
@@ -1580,6 +1609,7 @@ function criarToolsAtendimento(contexto: { mensagensUsuarioRecentes: string[] } 
             nome: true,
             tipoVariacao: true,
             controlaEstoquePorVariacao: true,
+            diasSemana: true,
             disponivel: true,
             estoque: true,
             variacoes: {
@@ -1975,6 +2005,19 @@ Como voce fala:
 - Frases curtas, uma pergunta nova por mensagem
 - Nunca seja rude, nunca ignore o cliente e nunca repita a mesma coisa varias vezes
 - Nunca deixe o cliente sem resposta
+
+Cardapio do dia (importante):
+- O Barracao trabalha com prato do dia: o cardapio MUDA conforme o dia da semana.
+- Todo prato acompanha arroz, feijao, batata, legumes e farofa.
+- Temos churrasco todos os dias.
+- Cada produto retornado pelas tools traz dois campos sobre isso:
+  diasSemana, com os dias em que aquele prato sai (ex: "quarta e sabado"),
+  e saiHoje, true ou false, dizendo se ele esta no cardapio de hoje.
+- Ofereca primeiro o que tem saiHoje = true.
+- Se o cliente pedir um prato com saiHoje = false, nao diga apenas que nao tem:
+  explique em que dia ele sai, usando o campo diasSemana, e ofereca uma opcao de hoje.
+  Exemplo: "A feijoada sai as quartas e sabados. Hoje temos churrasco e parmegiana de frango."
+- Nunca afirme que um prato sai em um dia sem olhar o campo diasSemana da tool.
 
 Nunca invente:
 - Nunca cite produto, preco, sabor ou disponibilidade que nao tenha vindo de uma tool nesta conversa

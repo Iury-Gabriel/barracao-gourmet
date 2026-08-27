@@ -14,7 +14,7 @@ import { API_URL } from "@/lib/apiBaseUrl";
 import { CardFormMercadoPago, type CartaoTokenizado } from "./CardFormMercadoPago";
 import { tokenizarCartaoSalvo } from "@/lib/mercadopago";
 import {
-  Wine, ShoppingCart, Plus, Minus, Trash2, CheckCircle,
+  UtensilsCrossed, ShoppingCart, Plus, Minus, Trash2, CheckCircle,
   CreditCard, QrCode, Copy, Clock, Truck, ArrowRight, ArrowLeft, MessageCircle, ClipboardList,
 } from "lucide-react";
 import { toast } from "sonner";
@@ -1690,7 +1690,7 @@ export default function CardapioPage() {
                     />
                   ) : (
                     <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-marrom-800 to-marrom-900">
-                      <Wine className="h-10 w-10 text-marrom-500/60" />
+                      <UtensilsCrossed className="h-10 w-10 text-marrom-500/60" />
                     </div>
                   )}
                   <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-marrom-950/55 via-transparent to-transparent" />
@@ -1733,7 +1733,7 @@ export default function CardapioPage() {
                     </div>
                   ) : (
                     <div className="relative flex h-32 items-center justify-center bg-gradient-to-br from-marrom-900 to-marrom-800">
-                      <Wine className="h-10 w-10 text-marrom-500/50" />
+                      <UtensilsCrossed className="h-10 w-10 text-marrom-500/50" />
                       {esgotado && (
                         <div className="absolute inset-0 bg-marrom-950/40 flex items-center justify-center">
                           <Badge className="bg-red-600 text-white text-sm px-3 py-1">Esgotado</Badge>
