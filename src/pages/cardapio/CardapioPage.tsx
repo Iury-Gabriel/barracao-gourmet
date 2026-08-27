@@ -480,6 +480,15 @@ export default function CardapioPage() {
   }, [produtos, capaPorCategoria]);
   const produtosFiltrados = categoriaAtiva ? (produtos as any[]).filter((p: any) => p.categoria === categoriaAtiva) : [];
 
+  // Com uma categoria so (o Barracao trabalha com "Pratos do Dia"), a tela de
+  // escolher categoria seria um botao sozinho e nenhuma comida a vista. Entra
+  // direto na lista. Com duas ou mais, mantem o menu de categorias.
+  useEffect(() => {
+    if (!categoriaAtiva && categoriasComImagem.length === 1) {
+      setCategoriaAtiva(categoriasComImagem[0].nome);
+    }
+  }, [categoriasComImagem, categoriaAtiva]);
+
   useEffect(() => {
     const urls = produtos
       .map((produto: any) => resolveImageUrl(produto.imagemUrl))
