@@ -957,7 +957,7 @@ export default function CardapioPage() {
     setPixCopiado(false);
   };
 
-  // Acima de 12km: cliente vem retirar (no balcao ou enviando Uber Flash/99). Em ambos os casos o pedido vira RETIRADA.
+  // Fora do raio de entrega: cliente vem retirar (no balcao ou enviando Uber Flash/99). Em ambos os casos o pedido vira RETIRADA.
   const escolherRetiradaNaLoja = () => {
     setForm((f) => ({ ...f, tipo: "RETIRADA" }));
     setFreteInfo(null);
@@ -1902,13 +1902,13 @@ export default function CardapioPage() {
               <span className="font-semibold text-white">
                 {Number(freteInfo?.distanciaKm || 0).toFixed(1)} km
               </span>{" "}
-              da loja, acima do limite de 12 km para delivery próprio.
+              da loja, acima do limite de 5 km para delivery próprio.
             </p>
             <p>
               Você pode chamar um <span className="font-semibold text-white">Uber Flash ou 99</span> para retirar
               seu pedido na{" "}
               <span className="font-semibold text-white">
-                {freteInfo?.enderecoRetirada || "Rua Dino Borgioli, 536 A"}
+                {freteInfo?.enderecoRetirada || "nossa loja"}
               </span>{" "}
               e levar até você, ou retirar você mesmo na loja.
             </p>

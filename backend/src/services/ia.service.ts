@@ -11,6 +11,7 @@ import {
   produtoControlaEstoquePorVariacao,
 } from '../lib/produtoEstoque';
 import { buscarEnderecoPorCep, buscarPedidoCardapio, calcularFreteCardapio, criarPedidoCardapio } from './cardapio.service';
+import { LIMITE_KM_ENTREGA } from '../lib/frete';
 import { criarReserva } from './reservas.service';
 import { gerarQrCodePix, isMercadoPagoConfigured } from './mercado-pago.service';
 
@@ -1379,14 +1380,14 @@ function criarToolsAtendimento(contexto: { mensagensUsuarioRecentes: string[] } 
             freteInfo = { ...freteInfo, ...resultadoFrete };
             if (!resultadoFrete.atende) {
               if ((resultadoFrete as any).acimaDoLimite) {
-                // Acima de 12km: nao recusar. Oferecer retirada (balcao ou Uber Flash/99).
+                // Fora do raio de entrega: nao recusar. Oferecer retirada (balcao ou Uber Flash/99).
                 freteInfo = {
                   ...freteInfo,
                   ofereceRetirada: true,
                   mensagemForaDeArea: (resultadoFrete as any).mensagemForaDeArea,
                 };
                 bloqueios.push(
-                  `Endereco a ${Number(resultadoFrete.distanciaKm || 0).toFixed(1)}km (acima de 12km): enviar ao cliente exatamente a mensagem em mensagemForaDeArea e, se ele concordar, fechar como RETIRADA.`,
+                  `Endereco a ${Number(resultadoFrete.distanciaKm || 0).toFixed(1)}km (acima de ${LIMITE_KM_ENTREGA}km): enviar ao cliente exatamente a mensagem em mensagemForaDeArea e, se ele concordar, fechar como RETIRADA.`,
                 );
               } else {
                 bloqueios.push(String(resultadoFrete.motivo || 'Endereco fora da area de atendimento.'));

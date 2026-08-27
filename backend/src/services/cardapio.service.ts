@@ -158,7 +158,7 @@ async function ordenarProdutosPorPedidos(produtos: any[]) {
 }
 
 // Raio (km, em linha reta) ao redor da loja para limitar o geocode.
-// Cobre folgadamente a area de entrega (max 12km de rota) e exclui outras cidades/estados.
+// Cobre folgadamente a area de entrega (raio real em LIMITE_KM_ENTREGA) e exclui outras cidades/estados.
 const RAIO_BUSCA_GEOCODE_KM = 20;
 
 // Acima desta distancia (linha reta) a coordenada do CEP e considerada suspeita/furada
