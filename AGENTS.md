@@ -162,9 +162,14 @@ Base URL: `http://localhost:3333`
 
 ---
 
-## Public route
+## Public routes
 
-`/cardapio` — no login, no `RequireAuth`, no `AppLayout`. Fetches `GET /api/cardapio` directly without JWT.
+- `/cardapio` — no login, no `RequireAuth`, no `AppLayout`. Fetches `GET /api/cardapio` directly without JWT.
+- `/site` — landing page institucional (`src/pages/site/LandingPage.tsx`). Estática, sem chamadas de API.
+  Todo o conteúdo (textos, prato do dia por dia da semana, preços, horários, contatos) vive em
+  `src/pages/site/siteContent.ts` — edite só esse arquivo para atualizar o site. Usa o tema escuro da
+  marca inline (`siteThemeVars`, marrom + amarelo da logo), sem seguir o toggle do painel. `/` continua
+  redirecionando para `/login`.
 
 ---
 

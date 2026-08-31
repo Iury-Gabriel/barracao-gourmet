@@ -14,6 +14,9 @@ import LoginPage from "./pages/auth/LoginPage";
 // Cardápio público
 import CardapioPage from "./pages/cardapio/CardapioPage";
 
+// Site institucional público
+import LandingPage from "./pages/site/LandingPage";
+
 // Pedidos
 import PedidosPage from "./pages/pedidos/PedidosPage";
 import PedidoDetailPage from "./pages/pedidos/PedidoDetailPage";
@@ -77,6 +80,7 @@ const App = () => (
           <AuthProvider>
             <Routes>
               {/* Rotas públicas */}
+              <Route path="/site" element={<LandingPage />} />
               <Route path="/cardapio" element={<CardapioPage />} />
               <Route path="/login" element={<LoginPage />} />
               <Route path="/" element={<Navigate to="/login" replace />} />
