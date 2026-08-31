@@ -104,7 +104,7 @@ export default function LandingPage() {
       <header className="sticky top-0 z-50 border-b border-white/10 bg-marrom-950/90 backdrop-blur">
         <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-4 sm:px-6">
           <a href="#topo" className="flex items-center gap-3">
-            <img src="/logo.svg" alt={siteInfo.nome} className="h-10 w-10 object-contain" />
+            <img src="/logo.png" alt={siteInfo.nome} className="h-10 w-10 object-contain" />
             <span className="text-lg font-extrabold tracking-tight text-amber-50">{siteInfo.nome}</span>
           </a>
 
@@ -572,7 +572,7 @@ export default function LandingPage() {
           <div className="grid gap-10 sm:grid-cols-2 lg:grid-cols-4">
             <div className="lg:col-span-2">
               <div className="flex items-center gap-3">
-                <img src="/logo.svg" alt={siteInfo.nome} className="h-10 w-10 object-contain" />
+                <img src="/logo.png" alt={siteInfo.nome} className="h-10 w-10 object-contain" />
                 <span className="text-lg font-extrabold text-amber-50">{siteInfo.nome}</span>
               </div>
               <p className="mt-4 max-w-sm text-sm leading-relaxed text-marrom-300">{siteInfo.descricaoCurta}</p>
