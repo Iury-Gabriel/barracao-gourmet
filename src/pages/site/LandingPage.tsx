@@ -61,6 +61,12 @@ function fmt(valor: number) {
 const whatsappHref = `https://wa.me/${siteInfo.whatsapp.numero}?text=${encodeURIComponent(
   siteInfo.whatsapp.mensagem,
 )}`;
+
+// Contatos que o restaurante ainda nao divulgou ficam fora do ar em vez de
+// virar link quebrado (wa.me sem numero, mailto vazio, perfil inexistente).
+const temWhatsapp = Boolean(siteInfo.whatsapp.numero);
+const temEmail = Boolean(siteInfo.email);
+const temInstagram = Boolean(siteInfo.instagram.url);
 const mapsHref = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
   siteInfo.endereco.buscaMaps,
 )}`;
@@ -194,15 +200,17 @@ export default function LandingPage() {
                 Ver cardápio e pedir
                 <ArrowRight className="h-5 w-5" />
               </Link>
-              <a
-                href={whatsappHref}
-                target="_blank"
-                rel="noreferrer"
-                className="inline-flex items-center gap-2 rounded-xl border border-white/15 bg-white/5 px-6 py-3.5 text-base font-semibold text-amber-50 transition-colors hover:bg-white/10"
-              >
-                <MessageCircle className="h-5 w-5" />
-                Falar no WhatsApp
-              </a>
+              {temWhatsapp && (
+                <a
+                  href={whatsappHref}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="inline-flex items-center gap-2 rounded-xl border border-white/15 bg-white/5 px-6 py-3.5 text-base font-semibold text-amber-50 transition-colors hover:bg-white/10"
+                >
+                  <MessageCircle className="h-5 w-5" />
+                  Falar no WhatsApp
+                </a>
+              )}
             </div>
 
             <dl className="mt-14 grid gap-6 sm:grid-cols-3">
@@ -473,20 +481,22 @@ export default function LandingPage() {
                   </div>
                 </div>
 
-                <div className="flex gap-4">
-                  <Phone className="mt-0.5 h-5 w-5 shrink-0 text-amber-400" />
-                  <div>
-                    <p className="font-semibold text-amber-50">{siteInfo.whatsapp.exibicao}</p>
-                    <a
-                      href={whatsappHref}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="text-sm text-marrom-300 hover:text-amber-300"
-                    >
-                      Chamar no WhatsApp
-                    </a>
+                {temWhatsapp && (
+                  <div className="flex gap-4">
+                    <Phone className="mt-0.5 h-5 w-5 shrink-0 text-amber-400" />
+                    <div>
+                      <p className="font-semibold text-amber-50">{siteInfo.whatsapp.exibicao}</p>
+                      <a
+                        href={whatsappHref}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="text-sm text-marrom-300 hover:text-amber-300"
+                      >
+                        Chamar no WhatsApp
+                      </a>
+                    </div>
                   </div>
-                </div>
+                )}
 
                 <div className="flex gap-4">
                   <Truck className="mt-0.5 h-5 w-5 shrink-0 text-amber-400" />
@@ -553,15 +563,17 @@ export default function LandingPage() {
               Ver cardápio de hoje
               <ArrowRight className="h-5 w-5" />
             </Link>
-            <a
-              href={whatsappHref}
-              target="_blank"
-              rel="noreferrer"
-              className="inline-flex items-center gap-2 rounded-xl border border-white/15 bg-white/5 px-6 py-3.5 text-base font-semibold text-amber-50 transition-colors hover:bg-white/10"
-            >
-              <MessageCircle className="h-5 w-5" />
-              {siteInfo.whatsapp.exibicao}
-            </a>
+            {temWhatsapp && (
+              <a
+                href={whatsappHref}
+                target="_blank"
+                rel="noreferrer"
+                className="inline-flex items-center gap-2 rounded-xl border border-white/15 bg-white/5 px-6 py-3.5 text-base font-semibold text-amber-50 transition-colors hover:bg-white/10"
+              >
+                <MessageCircle className="h-5 w-5" />
+                {siteInfo.whatsapp.exibicao}
+              </a>
+            )}
           </div>
         </motion.div>
       </section>
@@ -599,37 +611,43 @@ export default function LandingPage() {
             <div>
               <h3 className="text-sm font-bold uppercase tracking-wider text-amber-400">Contato</h3>
               <ul className="mt-4 space-y-3 text-sm">
-                <li>
-                  <a
-                    href={whatsappHref}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="flex items-center gap-2 text-marrom-300 hover:text-amber-300"
-                  >
-                    <MessageCircle className="h-4 w-4" />
-                    {siteInfo.whatsapp.exibicao}
-                  </a>
-                </li>
-                <li>
-                  <a
-                    href={`mailto:${siteInfo.email}`}
-                    className="flex items-center gap-2 text-marrom-300 hover:text-amber-300"
-                  >
-                    <Mail className="h-4 w-4" />
-                    {siteInfo.email}
-                  </a>
-                </li>
-                <li>
-                  <a
-                    href={siteInfo.instagram.url}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="flex items-center gap-2 text-marrom-300 hover:text-amber-300"
-                  >
-                    <Instagram className="h-4 w-4" />
-                    {siteInfo.instagram.usuario}
-                  </a>
-                </li>
+                {temWhatsapp && (
+                  <li>
+                    <a
+                      href={whatsappHref}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="flex items-center gap-2 text-marrom-300 hover:text-amber-300"
+                    >
+                      <MessageCircle className="h-4 w-4" />
+                      {siteInfo.whatsapp.exibicao}
+                    </a>
+                  </li>
+                )}
+                {temEmail && (
+                  <li>
+                    <a
+                      href={`mailto:${siteInfo.email}`}
+                      className="flex items-center gap-2 text-marrom-300 hover:text-amber-300"
+                    >
+                      <Mail className="h-4 w-4" />
+                      {siteInfo.email}
+                    </a>
+                  </li>
+                )}
+                {temInstagram && (
+                  <li>
+                    <a
+                      href={siteInfo.instagram.url}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="flex items-center gap-2 text-marrom-300 hover:text-amber-300"
+                    >
+                      <Instagram className="h-4 w-4" />
+                      {siteInfo.instagram.usuario}
+                    </a>
+                  </li>
+                )}
                 <li>
                   <a
                     href={mapsHref}

@@ -14,23 +14,27 @@ export const siteInfo = {
   tagline: "Comida caseira de verdade, feita na hora",
   descricaoCurta:
     "Prato do dia com arroz, feijão, batata, legumes e farofa — e churrasco todos os dias. Almoce no salão, retire no balcão ou receba em casa.",
-  // CONFIRMAR: endereço herdado de LOJA_ENDERECO_RETIRADA / LOJA_ENDERECO_BASE.
+  // Endereço real, conferido no onboarding e usado no cálculo de frete.
   endereco: {
-    linha1: "Rua Dino Borgioli, 536 A",
-    linha2: "Vila Campo Grande — São Paulo/SP",
+    linha1: "R. Olga Genioli Leite, 50",
+    linha2: "Jurubatuba — São Paulo/SP, 04675-130",
     // Usado no mapa e no botão "Como chegar".
-    buscaMaps: "Rua Dino Borgioli, 536, Vila Campo Grande, São Paulo, SP, Brasil",
+    buscaMaps: "Rua Olga Genioli Leite, 50, Jurubatuba, São Paulo, SP, Brasil",
   },
-  // CONFIRMAR: telefone/WhatsApp reais. Formato do link: só dígitos, com DDI 55.
+  // PENDENTE: falta o WhatsApp de atendimento ao cliente. Enquanto não vier,
+  // o site não mostra botão de WhatsApp, para não mandar ninguém para um
+  // número inexistente. Preencher numero/exibicao para o botão voltar.
   whatsapp: {
-    numero: "5511999999999",
-    exibicao: "(11) 99999-9999",
+    numero: "",
+    exibicao: "",
     mensagem: "Olá! Vim pelo site e gostaria de fazer um pedido.",
   },
-  email: "contato@barracaogourmet.com.br",
+  // Sem e-mail e sem Instagram divulgados até hoje. O domínio
+  // barracaogourmet.com.br não existe, então não dá para anunciar e-mail nele.
+  email: "",
   instagram: {
-    usuario: "@barracaogourmet",
-    url: "https://instagram.com/barracaogourmet",
+    usuario: "",
+    url: "",
   },
 };
 
@@ -285,10 +289,11 @@ export const comoFunciona = [
 
 /** CONFIRMAR: horários reais de funcionamento. */
 export const horarios = [
-  { dia: "Segunda a sexta", horario: "11h00 — 15h00" },
-  { dia: "Sábado", horario: "11h00 — 16h00" },
+  // Horário oficial do onboarding: pedidos a partir das 9h, entregas das 11h.
+  { dia: "Segunda a sábado", horario: "10h00 — 15h00" },
   { dia: "Domingo", horario: "Fechado" },
-  { dia: "Feriados", horario: "Consulte pelo WhatsApp" },
+  { dia: "Feriados", horario: "Fechado" },
+  { dia: "Entregas", horario: "A partir das 11h00" },
 ];
 
 export const faq = [
