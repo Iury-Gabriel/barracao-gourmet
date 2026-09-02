@@ -34,3 +34,12 @@ export function requireGerente(req: AuthRequest, res: Response, next: NextFuncti
   }
   next();
 }
+
+// A tela de entregas serve o proprio entregador; admin e gerente entram junto
+// para conseguir acompanhar e destravar problema em campo.
+export function requireEntregador(req: AuthRequest, res: Response, next: NextFunction) {
+  if (!['ADMIN', 'GERENTE', 'ENTREGADOR'].includes(req.user?.perfil || '')) {
+    return res.status(403).json({ error: 'Acesso restrito a entregadores.' });
+  }
+  next();
+}

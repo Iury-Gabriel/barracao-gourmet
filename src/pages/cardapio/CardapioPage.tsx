@@ -11,6 +11,7 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sh
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { resolveImageUrl } from "@/lib/media";
 import { API_URL } from "@/lib/apiBaseUrl";
+import { RastreioEntrega } from "@/components/shared/RastreioEntrega";
 import { CardFormMercadoPago, type CartaoTokenizado } from "./CardFormMercadoPago";
 import { tokenizarCartaoSalvo } from "@/lib/mercadopago";
 import {
@@ -347,6 +348,8 @@ function MeusPedidosSheet({
                 <span className="text-marrom-300">Total</span>
                 <span className="font-bold text-primary">{fmt(Number(p.total || 0))}</span>
               </div>
+              {/* O mapa aparece sozinho quando o pedido esta em rota. */}
+              {p.status === "EM_ENTREGA" && <RastreioEntrega pedidoId={p.id} />}
               <button
                 className="mt-2 text-xs font-medium text-primary hover:underline"
                 onClick={() => setExpandidoId((id) => (id === p.id ? null : p.id))}

@@ -15,9 +15,11 @@ model Usuario {
   nome      String
   email     String   @unique
   senha     String
-  perfil    String   @default("OPERADOR") // ADMIN | GERENTE | OPERADOR
+  perfil    String   @default("OPERADOR") // ADMIN | GERENTE | OPERADOR | ENTREGADOR
   ativo     Boolean  @default(true)
   criadoEm DateTime @default(now())
+
+  entregador Entregador?
 
   @@map("usuarios")
 }
@@ -26,8 +28,14 @@ model Entregador {
   id          String   @id @default(uuid())
   nome        String
   numero      String   @unique
+  // Login usado por ele no celular. Opcional: entregador sem login continua
+  // valendo para o rodizio de aviso por WhatsApp, so nao rastreia.
+  usuarioId   String?  @unique
+  usuario     Usuario? @relation(fields: [usuarioId], references: [id], onDelete: SetNull)
   criadoEm    DateTime @default(now())
   atualizadoEm DateTime @updatedAt
+
+  pedidos     Pedido[]
 
   @@map("entregadores")
 }
@@ -164,10 +172,15 @@ model Pedido {
   atualizadoEm   DateTime @updatedAt
 
   cliente   Cliente?          @relation(fields: [clienteId], references: [id])
+  // Quem pegou esta entrega. A posicao ao vivo NAO fica aqui: vive no Redis com
+  // expiracao, para nao criar historico permanente de localizacao de pessoa.
+  entregadorId String?
+  entregador   Entregador?    @relation(fields: [entregadorId], references: [id], onDelete: SetNull)
   cupom     Cupom?            @relation(fields: [cupomId], references: [id], onDelete: SetNull)
   itens     ItemPedido[]
   historico HistoricoPedido[]
 
+  @@index([entregadorId])
   @@map("pedidos")
 }
 

@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import * as cardapioService from '../services/cardapio.service';
+import { rastrearPedido } from '../services/entregas.service';
 
 export async function listar(req: Request, res: Response, next: NextFunction) {
   try {
@@ -85,5 +86,13 @@ export async function confirmarPagamento(req: Request, res: Response, next: Next
     const { metodoPagamento } = req.body;
     const pedido = await cardapioService.confirmarPagamento(req.params.id, metodoPagamento);
     res.json(pedido);
+  } catch (err) { next(err); }
+}
+
+// Rastreio publico: o cliente acompanha o pedido dele pelo cardapio digital.
+// So devolve posicao e distancia, nunca dado do entregador.
+export async function rastreio(req: Request, res: Response, next: NextFunction) {
+  try {
+    res.json(await rastrearPedido(req.params.id));
   } catch (err) { next(err); }
 }

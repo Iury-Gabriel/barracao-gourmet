@@ -11,6 +11,7 @@ router.get('/cep/:cep', cardapioController.buscarCep);
 router.get('/cliente', cardapioController.buscarCliente);
 router.get('/cartoes', cardapioController.cartoesSalvos);
 router.get('/meus-pedidos', cardapioController.meusPedidos);
+router.get('/pedido/:id/rastreio', cardapioController.rastreio);
 router.post('/pedido', cardapioController.criarPedido);
 router.get('/pedido/:id', cardapioController.buscarPedido);
 router.post('/pedido/:id/pagamento', cardapioController.confirmarPagamento);
