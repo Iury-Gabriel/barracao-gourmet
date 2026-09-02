@@ -278,7 +278,7 @@ export const comoFunciona = [
   {
     passo: "2",
     titulo: "Pague como preferir",
-    texto: "Pix na hora, cartão pelo site ou pagamento na entrega, em dinheiro ou maquininha.",
+    texto: "Pix pelo site na hora, ou pague na entrega e no balcão: dinheiro, cartão ou VR/VA na maquininha.",
   },
   {
     passo: "3",
@@ -320,11 +320,6 @@ export const faq = [
   {
     pergunta: "Quais formas de pagamento vocês aceitam?",
     resposta:
-      "Pix, cartão de crédito e débito pelo próprio site, e também pagamento na entrega em dinheiro ou maquininha.",
-  },
-  {
-    pergunta: "Fazem encomenda para festa ou empresa?",
-    resposta:
-      "Fazemos, sob combinação. Chame no WhatsApp com a data, a quantidade de pessoas e o que você tem em mente que a gente monta o orçamento.",
+      "Pelo site, o pagamento é no Pix. Presencialmente, na entrega ou no balcão, aceitamos dinheiro, cartão de crédito e débito e VR/VA na maquininha.",
   },
 ];
