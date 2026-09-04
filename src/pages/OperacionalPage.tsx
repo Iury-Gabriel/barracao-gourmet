@@ -13,10 +13,10 @@ import { PedidoDetailDialog } from "@/components/shared/PedidoDetailDialog";
 import { getNextPedidoStatus, getNextPedidoStatusLabel } from "@/lib/pedidoStatus";
 
 const STATUS_CONFIG = {
-  RECEBIDO: { label: "Recebido", color: "bg-blue-50 border-blue-200", badge: "bg-blue-100 text-blue-800", icon: ShoppingCart },
-  EM_PREPARO: { label: "Em preparação", color: "bg-amber-50 border-amber-200", badge: "bg-amber-100 text-amber-800", icon: ChefHat },
-  PRONTO: { label: "Pronto", color: "bg-emerald-50 border-emerald-200", badge: "bg-emerald-100 text-emerald-800", icon: CheckCircle },
-  EM_ENTREGA: { label: "Para entrega", color: "bg-purple-50 border-purple-200", badge: "bg-purple-100 text-purple-800", icon: Truck },
+  RECEBIDO: { label: "Recebido", color: "bg-blue-50 border-blue-200 dark:bg-blue-950/40 dark:border-blue-900", badge: "bg-blue-100 text-blue-800", icon: ShoppingCart },
+  EM_PREPARO: { label: "Em preparação", color: "bg-amber-50 border-amber-200 dark:bg-amber-950/40 dark:border-amber-900", badge: "bg-amber-100 text-amber-800", icon: ChefHat },
+  PRONTO: { label: "Pronto", color: "bg-emerald-50 border-emerald-200 dark:bg-emerald-950/40 dark:border-emerald-900", badge: "bg-emerald-100 text-emerald-800", icon: CheckCircle },
+  EM_ENTREGA: { label: "Para entrega", color: "bg-purple-50 border-purple-200 dark:bg-purple-950/40 dark:border-purple-900", badge: "bg-purple-100 text-purple-800", icon: Truck },
 };
 
 // A cozinha precisa saber o destino do pedido: o que vai para entrega sai da

@@ -87,7 +87,7 @@ export default function EntregaPage() {
           </h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
             {prontos.map(p => (
-              <Card key={p.id} className="border-emerald-200 bg-emerald-50">
+              <Card key={p.id} className="border-emerald-200 bg-emerald-50 dark:border-emerald-900 dark:bg-emerald-950/40">
                 <CardContent className="p-4 space-y-2">
                   <div className="flex items-center justify-between">
                     <span className="font-bold">#{p.numero}</span>
@@ -131,7 +131,7 @@ export default function EntregaPage() {
           </h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
             {emEntrega.map(p => (
-              <Card key={p.id} className="border-purple-200 bg-purple-50">
+              <Card key={p.id} className="border-purple-200 bg-purple-50 dark:border-purple-900 dark:bg-purple-950/40">
                 <CardContent className="p-4 space-y-2">
                   <div className="flex items-center justify-between">
                     <span className="font-bold">#{p.numero}</span>
@@ -175,7 +175,7 @@ export default function EntregaPage() {
           </h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
             {retirada.map(p => (
-              <Card key={p.id} className="border-amber-200 bg-amber-50">
+              <Card key={p.id} className="border-amber-200 bg-amber-50 dark:border-amber-900 dark:bg-amber-950/40">
                 <CardContent className="p-4 space-y-2">
                   <div className="flex items-center justify-between">
                     <span className="font-bold">#{p.numero}</span>
