@@ -2254,7 +2254,9 @@ export async function gerarRespostaIA(params: {
     apiKey,
     model: modelName,
     temperature: 0.2,
-    ...(ehModeloDeRaciocinio ? { reasoningEffort: 'none' as const } : {}),
+    // O parametro do construtor e 'reasoning'; 'reasoningEffort' so vale como
+    // opcao de chamada e era silenciosamente ignorado aqui.
+    ...(ehModeloDeRaciocinio ? { reasoning: { effort: 'none' as const } } : {}),
     ...(config.openaiBaseUrl ? { configuration: { baseURL: config.openaiBaseUrl } } : {}),
   });
 
