@@ -24,9 +24,9 @@ class PageErrorBoundary extends Component<
       return (
         <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", minHeight: "60vh", gap: "16px", textAlign: "center", padding: "32px" }}>
           <p style={{ fontSize: "18px", fontWeight: 600 }}>Erro ao carregar a página</p>
-          <p style={{ fontSize: "14px", color: "#666" }}>{this.state.message}</p>
+          <p style={{ fontSize: "14px", color: "#b3a69e" }}>{this.state.message}</p>
           <button
-            style={{ padding: "8px 20px", border: "1px solid #ccc", borderRadius: "6px", cursor: "pointer", background: "white" }}
+            style={{ padding: "8px 20px", border: "1px solid #4a3a33", borderRadius: "6px", cursor: "pointer", background: "transparent", color: "#f8f5f2" }}
             onClick={() => {
               this.setState({ hasError: false, message: "" });
               window.location.reload();

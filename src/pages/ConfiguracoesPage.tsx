@@ -556,7 +556,7 @@ function AgentesIATab() {
         </div>
         {shouldShowQr && qrCode && (
           <div className="mt-3 p-3 bg-white rounded border flex flex-col items-center">
-            <p className="text-xs text-muted-foreground mb-2">Escaneie o QR Code com o WhatsApp:</p>
+            <p className="text-xs text-zinc-600 mb-2">Escaneie o QR Code com o WhatsApp:</p>
             <img src={qrCode.startsWith("data:") ? qrCode : `data:image/png;base64,${qrCode}`} alt="QR Code" className="w-48 h-48" />
           </div>
         )}
