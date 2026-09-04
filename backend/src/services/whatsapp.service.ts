@@ -822,22 +822,28 @@ async function enviarAudioUzapi(instancia: any, numero: string, audioUrl: string
 
 // ===== META OFICIAL =====
 
-async function criarInstanciaMeta(nome: string, tipo: string, accessToken: string, phoneNumberId: string, wabaId: string) {
+// Bate as credenciais na Graph API e devolve o telefone publicado. Serve para
+// criar a instancia e para trocar as credenciais depois: nos dois casos gravar
+// sem validar deixaria a instancia muda, sem erro visivel na tela.
+async function validarCredenciaisMeta(accessToken: string, phoneNumberId: string) {
   console.log('[meta] Validando credenciais...', { phoneNumberId });
-  let telefonePublico = '';
   try {
     const res = await fetch(`https://graph.facebook.com/v22.0/${phoneNumberId}`, {
       headers: { 'Authorization': `Bearer ${accessToken}` },
     });
     if (!res.ok) {
       const errData: any = await res.json().catch(() => ({}));
-      throw new Error(errData.error?.message || 'Credenciais invÃ¡lidas');
+      throw new Error(errData.error?.message || 'Credenciais inválidas');
     }
     const data: any = await res.json().catch(() => ({}));
-    telefonePublico = String(data?.display_phone_number || '').replace(/\D/g, '');
+    return String(data?.display_phone_number || '').replace(/\D/g, '');
   } catch (err: any) {
     throw new Error(`Erro ao validar credenciais Meta: ${err.message}`);
   }
+}
+
+async function criarInstanciaMeta(nome: string, tipo: string, accessToken: string, phoneNumberId: string, wabaId: string) {
+  const telefonePublico = await validarCredenciaisMeta(accessToken, phoneNumberId);
 
   const instancia = await prisma.instanciaWhatsApp.create({
     data: {
@@ -1056,6 +1062,60 @@ export async function desconectarInstancia(instanciaId: string) {
   });
 
   return { status: 'DESCONECTADO' };
+}
+
+export async function atualizarCredenciais(
+  instanciaId: string,
+  params: {
+    metaAccessToken?: string;
+    metaPhoneNumberId?: string;
+    metaWabaId?: string;
+    uzapiUrl?: string;
+    uzapiToken?: string;
+  }
+) {
+  const instancia = await prisma.instanciaWhatsApp.findUnique({ where: { id: instanciaId } });
+  if (!instancia) throw new Error('Instância não encontrada');
+
+  // A listagem devolve os tokens mascarados, entao a tela nunca tem o valor real
+  // para reenviar. Campo vazio (ou o proprio '***') mantem o que ja esta gravado:
+  // so troca o que for de fato digitado.
+  const informado = (valor?: string) => {
+    const limpo = (valor || '').trim();
+    return limpo && limpo !== '***' ? limpo : undefined;
+  };
+
+  if (instancia.provedor === 'META_OFICIAL') {
+    const accessToken = informado(params.metaAccessToken) || instancia.metaAccessToken || '';
+    const phoneNumberId = informado(params.metaPhoneNumberId) || instancia.metaPhoneNumberId || '';
+    const wabaId = informado(params.metaWabaId) || instancia.metaWabaId || '';
+
+    if (!accessToken || !phoneNumberId || !wabaId) {
+      throw new Error('Access Token, Phone Number ID e WABA ID são obrigatórios');
+    }
+
+    const telefonePublico = await validarCredenciaisMeta(accessToken, phoneNumberId);
+
+    return prisma.instanciaWhatsApp.update({
+      where: { id: instanciaId },
+      data: {
+        metaAccessToken: accessToken,
+        metaPhoneNumberId: phoneNumberId,
+        metaWabaId: wabaId,
+        telefone: telefonePublico || instancia.telefone,
+        status: 'CONECTADO',
+      },
+    });
+  }
+
+  const uzapiUrl = informado(params.uzapiUrl) || instancia.uzapiUrl || '';
+  const uzapiToken = informado(params.uzapiToken) || instancia.uzapiToken || '';
+  if (!uzapiUrl || !uzapiToken) throw new Error('URL e token do UZapi são obrigatórios');
+
+  return prisma.instanciaWhatsApp.update({
+    where: { id: instanciaId },
+    data: { uzapiUrl, uzapiToken },
+  });
 }
 
 export async function excluirInstancia(instanciaId: string) {

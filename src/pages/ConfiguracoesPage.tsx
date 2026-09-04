@@ -10,7 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Textarea } from "@/components/ui/textarea";
@@ -473,6 +473,41 @@ function AgentesIATab() {
     onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["instancias-ia"] }); },
   });
 
+  const atualizarCredenciais = useMutation({
+    mutationFn: ({ id, dados }: { id: string; dados: any }) =>
+      api.put(`/api/ia/instancias/${id}/credenciais`, dados),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["instancias-ia"] });
+      toast.success("Credenciais atualizadas");
+      setCredInst(null);
+    },
+    onError: (err: any) => toast.error(err.message),
+  });
+
+  // Instancia cujas credenciais estao sendo trocadas (null = modal fechado).
+  const [credInst, setCredInst] = useState<any>(null);
+  const [formCred, setFormCred] = useState({
+    metaAccessToken: "",
+    metaPhoneNumberId: "",
+    metaWabaId: "",
+    uzapiUrl: "",
+    uzapiToken: "",
+  });
+
+  const abrirCredenciais = (inst: any) => {
+    // Os campos de token comecam vazios de proposito: a API devolve mascarado
+    // e o valor real nunca chega aqui. Os demais vem preenchidos para o usuario
+    // so corrigir o que precisa.
+    setFormCred({
+      metaAccessToken: "",
+      metaPhoneNumberId: inst.metaPhoneNumberId || "",
+      metaWabaId: inst.metaWabaId || "",
+      uzapiUrl: inst.uzapiUrl || "",
+      uzapiToken: "",
+    });
+    setCredInst(inst);
+  };
+
   const resetForm = () => setForm({ nome: "", provedor: "UZAPI", metaAccessToken: "", metaPhoneNumberId: "", metaWabaId: "" });
 
   const agenteAtivo = configIA?.iaAtiva !== false;
@@ -549,6 +584,9 @@ function AgentesIATab() {
                 <WifiOff className="h-4 w-4" />
               </Button>
             )}
+            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => abrirCredenciais(inst)} title="Atualizar credenciais">
+              <Key className="h-4 w-4" />
+            </Button>
             <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" onClick={() => { if (confirm("Excluir esta instância?")) excluir.mutate(inst.id); }} title="Excluir">
               <Trash2 className="h-4 w-4" />
             </Button>
@@ -761,6 +799,86 @@ function AgentesIATab() {
               disabled={!form.nome || (form.provedor === "UZAPI" && !configIA?.hasUzapi) || (form.provedor === "META_OFICIAL" && (!form.metaAccessToken || !form.metaPhoneNumberId || !form.metaWabaId)) || criar.isPending}
             >
               {criar.isPending ? "Criando..." : "Criar Instância"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={!!credInst} onOpenChange={(aberto) => !aberto && setCredInst(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Atualizar credenciais</DialogTitle>
+            <DialogDescription>
+              {credInst?.nome}
+              {credInst?.provedor === "META_OFICIAL"
+                ? " — as credenciais são validadas na Meta antes de salvar."
+                : " — servidor e token do UZapi."}
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-3 py-2">
+            {credInst?.provedor === "META_OFICIAL" ? (
+              <>
+                <div className="space-y-1">
+                  <Label>Access Token</Label>
+                  <Input
+                    type="password"
+                    value={formCred.metaAccessToken}
+                    onChange={e => setFormCred(f => ({ ...f, metaAccessToken: e.target.value }))}
+                    placeholder="Deixe em branco para manter o token atual"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <Label>Phone Number ID</Label>
+                  <Input
+                    value={formCred.metaPhoneNumberId}
+                    onChange={e => setFormCred(f => ({ ...f, metaPhoneNumberId: e.target.value }))}
+                    placeholder="ID do número"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <Label>WABA ID</Label>
+                  <Input
+                    value={formCred.metaWabaId}
+                    onChange={e => setFormCred(f => ({ ...f, metaWabaId: e.target.value }))}
+                    placeholder="WhatsApp Business Account ID"
+                  />
+                </div>
+              </>
+            ) : (
+              <>
+                <div className="space-y-1">
+                  <Label>URL do servidor UZapi</Label>
+                  <Input
+                    value={formCred.uzapiUrl}
+                    onChange={e => setFormCred(f => ({ ...f, uzapiUrl: e.target.value }))}
+                    placeholder="https://seu-servidor-uzapi"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <Label>Token</Label>
+                  <Input
+                    type="password"
+                    value={formCred.uzapiToken}
+                    onChange={e => setFormCred(f => ({ ...f, uzapiToken: e.target.value }))}
+                    placeholder="Deixe em branco para manter o token atual"
+                  />
+                </div>
+              </>
+            )}
+
+            <p className="text-xs text-muted-foreground">
+              Campo em branco mantém o valor que já está salvo.
+            </p>
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setCredInst(null)}>Cancelar</Button>
+            <Button
+              onClick={() => atualizarCredenciais.mutate({ id: credInst.id, dados: formCred })}
+              disabled={atualizarCredenciais.isPending}
+            >
+              {atualizarCredenciais.isPending ? "Validando..." : "Salvar credenciais"}
             </Button>
           </DialogFooter>
         </DialogContent>

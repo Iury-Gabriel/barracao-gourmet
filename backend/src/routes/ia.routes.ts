@@ -119,6 +119,22 @@ router.post('/instancias/:id/desconectar', async (req, res) => {
   }
 });
 
+// Troca as credenciais de uma instancia que ja existe, sem precisar excluir e
+// recriar (o que perderia o historico de mensagens ligado a ela).
+router.put('/instancias/:id/credenciais', async (req, res) => {
+  try {
+    const instancia = await whatsappService.atualizarCredenciais(req.params.id, req.body);
+    // Mesma mascara da listagem: o token nunca volta para o navegador.
+    res.json({
+      ...instancia,
+      uzapiToken: instancia.uzapiToken ? '***' : null,
+      metaAccessToken: instancia.metaAccessToken ? '***' : null,
+    });
+  } catch (err: any) {
+    res.status(400).json({ error: err.message });
+  }
+});
+
 router.delete('/instancias/:id', async (req, res) => {
   try {
     await whatsappService.excluirInstancia(req.params.id);
