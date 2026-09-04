@@ -60,13 +60,18 @@ const CLIENTES = [
   ['Clinica Odonto Sorriso', 'Avenida Adolfo Pinheiro, 720', 'Santo Amaro', '04733-100'],
 ];
 
+// Cada conta com seu dia de vencimento, como na vida real. Isso mantem a
+// margem estavel em qualquer recorte: uma janela de 30 dias pega uma vez cada
+// uma. Concentrando tudo no inicio do mes, a tela de Projecao (ultimos 30
+// dias) ficava sem quase nenhum custo fixo e mostrava margem de 71%.
 const CUSTOS_FIXOS = [
-  ['Aluguel', 'Aluguel do salao', 4800],
-  ['Folha', 'Salarios da equipe', 9600],
-  ['Energia', 'Conta de luz', 980],
-  ['Agua', 'Conta de agua', 320],
-  ['Gas', 'Recarga de gas GLP', 640],
-  ['Internet', 'Internet e telefone', 220],
+  ['Aluguel', 'Aluguel do salao', 4800, 5],
+  ['Folha', 'Folha quinzenal da equipe', 4800, 5],
+  ['Folha', 'Folha quinzenal da equipe', 4800, 20],
+  ['Energia', 'Conta de luz', 980, 10],
+  ['Agua', 'Conta de agua', 320, 15],
+  ['Gas', 'Recarga de gas GLP', 640, 20],
+  ['Internet', 'Internet e telefone', 220, 25],
 ];
 
 const CUSTOS_VARIAVEIS = [
@@ -93,19 +98,28 @@ function calcularFrete(subtotal) {
   return { km: par[0], frete: subtotal >= 200 ? 0 : par[1] };
 }
 
+// Agrupa por produto: sorteando o mesmo prato duas vezes, o pedido saia com
+// "1x Frango assado" e "2x Frango assado" em linhas separadas na cozinha.
 function montarItens(catalogo, qtdItens, proximoItemId) {
-  const itens = [];
-  let subtotal = 0;
+  const porProduto = new Map();
   for (let k = 0; k < qtdItens; k++) {
     const prod = escolher(catalogo);
     const quantidade = rnd() < 0.8 ? 1 : 2;
-    const sub = prod.preco * quantidade;
+    const atual = porProduto.get(prod.id);
+    if (atual) atual.quantidade += quantidade;
+    else porProduto.set(prod.id, { produto: prod, quantidade });
+  }
+
+  const itens = [];
+  let subtotal = 0;
+  for (const linha of porProduto.values()) {
+    const sub = linha.produto.preco * linha.quantidade;
     subtotal += sub;
     itens.push({
       id: proximoItemId(),
-      produtoId: prod.id,
-      quantidade,
-      precoUnit: prod.preco,
+      produtoId: linha.produto.id,
+      quantidade: linha.quantidade,
+      precoUnit: linha.produto.preco,
       subtotal: sub,
     });
   }
@@ -168,23 +182,17 @@ async function main() {
 
   for (const base of meses) {
     const diasNoMes = new Date(base.getFullYear(), base.getMonth() + 1, 0).getDate();
-    const primeiro = new Date(base.getFullYear(), base.getMonth(), 1);
-    const ultimo = new Date(base.getFullYear(), base.getMonth(), diasNoMes);
-    const de = primeiro < inicioHistorico ? inicioHistorico : primeiro;
-    const ate = ultimo > agora ? agora : ultimo;
-    const diasCobertos = Math.max(0, Math.round((ate - de) / 86400000) + 1);
-    if (diasCobertos === 0) continue;
-    const fator = diasCobertos / diasNoMes;
 
+    // A conta entra inteira se venceu dentro do periodo, ou nao entra. Sem
+    // rateio: e assim que aparece no extrato de quem toca a operacao.
     for (const fixo of CUSTOS_FIXOS) {
-      const dia = Math.max(3, Math.min(de.getDate() + 2, 10));
-      const data = new Date(base.getFullYear(), base.getMonth(), dia, 9, 0, 0);
+      const data = new Date(base.getFullYear(), base.getMonth(), fixo[3], 9, 0, 0);
       if (data > agora || data < inicioHistorico) continue;
       custos.push({
         tipo: 'CUSTO',
         categoria: fixo[0],
-        descricao: fixo[1] + (fator < 0.99 ? ' (parcial)' : ''),
-        valor: Math.round(fixo[2] * fator * (0.97 + rnd() * 0.06) * 100) / 100,
+        descricao: fixo[1],
+        valor: Math.round(fixo[2] * (0.97 + rnd() * 0.06) * 100) / 100,
         data,
       });
     }
@@ -235,6 +243,8 @@ async function main() {
   let seqLanc = 0;
   const proximoItemId = () => id('item', ++seqItem);
   const receitas = [];
+  const historicos = [];
+  let seqHist = 0;
 
   for (const entrada of dias) {
     const diaSemana = entrada.dia.getDay();
@@ -294,6 +304,19 @@ async function main() {
 
       receitaDia += total;
       totalEntregue += total;
+
+      // Sem estes dois registros a tela de KPIs mostra "Tempo Medio: 0 min",
+      // porque ela mede do RECEBIDO ao ENTREGUE no historico.
+      const minutosAteEntregar = inteiro(22, 52);
+      historicos.push(
+        { id: id('hist', ++seqHist), pedidoId, status: 'RECEBIDO', criadoEm: data },
+        {
+          id: id('hist', ++seqHist),
+          pedidoId,
+          status: 'ENTREGUE',
+          criadoEm: new Date(data.getTime() + minutosAteEntregar * 60000),
+        }
+      );
 
       // Receita lancada para o Financeiro bater com o Dashboard.
       receitas.push({
@@ -365,11 +388,13 @@ async function main() {
 
   // ---------- lancamentos financeiros ----------
   // Em lote: sao milhares de linhas e uma a uma levaria minutos.
+  await prisma.historicoPedido.createMany({ data: historicos });
   await prisma.lancamentoFinanceiro.createMany({ data: receitas });
   await prisma.lancamentoFinanceiro.createMany({
     data: custos.map((c) => Object.assign({ id: id('lanc', ++seqLanc) }, c)),
   });
   console.log('Lancamentos criados: ' + (receitas.length + custos.length));
+  console.log('Registros de historico: ' + historicos.length);
 
   // Mantem a numeracao real seguindo de onde a demo parou.
   await prisma.contador.upsert({
