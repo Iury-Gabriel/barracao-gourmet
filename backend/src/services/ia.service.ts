@@ -2242,10 +2242,19 @@ export async function gerarRespostaIA(params: {
     : `Mensagem do usuÃ¡rio (${remetente}):\n${mensagem}`;
 
   // Configurar modelo
+  // Os modelos da familia GPT-5 sao de raciocinio e o LangChain manda
+  // reasoning_effort por padrao. A API recusa isso junto com function tools em
+  // /v1/chat/completions: "Function tools with reasoning_effort are not
+  // supported ... set reasoning_effort to 'none'". Sem isto, toda resposta que
+  // precisa de tool (cardapio, frete, pedido, reserva) quebra com 400.
+  // Condicionado ao nome do modelo para nao atrapalhar se voltarem para 4o.
+  const ehModeloDeRaciocinio = /^gpt-5/i.test(modelName);
+
   const model = new ChatOpenAI({
     apiKey,
     model: modelName,
     temperature: 0.2,
+    ...(ehModeloDeRaciocinio ? { reasoningEffort: 'none' as const } : {}),
     ...(config.openaiBaseUrl ? { configuration: { baseURL: config.openaiBaseUrl } } : {}),
   });
 
