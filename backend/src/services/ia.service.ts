@@ -543,9 +543,13 @@ async function responderCatalogoSemAlucinacao(mensagem: string) {
     take: 200,
   });
 
+  // Este atalho responde sem passar pelo modelo nem pelas tools, entao o filtro
+  // de prato do dia precisa ser aplicado aqui tambem. Sem isso a Linda listava
+  // os 31 pratos numa sexta, incluindo feijoada, que so sai quarta e sabado.
   const produtosDisponiveis = produtos
     .map((produto) => mapearProdutoComEstoqueCalculado(produto, { ocultarVariacoesSemEstoque: true, recalcularDisponibilidade: true }))
-    .filter((produto) => produto.disponivel && produto.estoque > 0);
+    .filter((produto) => produto.disponivel && produto.estoque > 0)
+    .filter((produto) => saiHoje((produto as any).diasSemana));
 
   if (!produtosDisponiveis.length) {
     return 'No momento nao temos produtos disponiveis em estoque. Posso te avisar quando entrar reposicao.';
