@@ -279,3 +279,46 @@
     overflow: hidden;
   }
 }
+
+/* ------------------------------------------------------------------------
+ * Recharts no tema escuro
+ *
+ * O tooltip padrao do Recharts pinta o fundo de branco por style inline e
+ * nao define cor para o label. O label acabava herdando o --foreground quase
+ * branco do tema: texto branco sobre fundo branco, o valor sumia ao passar o
+ * mouse. Style inline so cede para !important.
+ *
+ * Os ticks dos eixos e os rotulos da pizza usam o cinza padrao da lib
+ * (#666 / #808080), que quase nao aparece sobre o fundo escuro. Aqui basta
+ * declarar o fill, porque CSS ganha de atributo de apresentacao no SVG.
+ *
+ * A cor dos itens do tooltip fica como esta: ela vem da serie e e o que
+ * liga o valor a sua linha ou fatia no grafico.
+ * ---------------------------------------------------------------------- */
+.dark .recharts-default-tooltip {
+  background-color: hsl(var(--popover)) !important;
+  border: 1px solid hsl(var(--border)) !important;
+  border-radius: 0.5rem;
+  box-shadow: 0 4px 12px rgb(0 0 0 / 0.35);
+  color: hsl(var(--popover-foreground)) !important;
+}
+
+.dark .recharts-default-tooltip .recharts-tooltip-label {
+  color: hsl(var(--popover-foreground)) !important;
+  font-weight: 600;
+}
+
+.dark .recharts-cartesian-axis-tick-value,
+.dark .recharts-pie-label-text,
+.dark .recharts-label {
+  fill: hsl(var(--muted-foreground));
+}
+
+.dark .recharts-legend-item-text {
+  color: hsl(var(--foreground)) !important;
+}
+
+/* Realce sob o cursor: o cinza padrao clareava demais a area do grafico. */
+.dark .recharts-tooltip-cursor {
+  fill: hsl(var(--muted) / 0.35);
+}
