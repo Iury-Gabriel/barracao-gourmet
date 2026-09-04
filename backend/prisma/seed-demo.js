@@ -60,18 +60,18 @@ const CLIENTES = [
   ['Clinica Odonto Sorriso', 'Avenida Adolfo Pinheiro, 720', 'Santo Amaro', '04733-100'],
 ];
 
-// Cada conta com seu dia de vencimento, como na vida real. Isso mantem a
-// margem estavel em qualquer recorte: uma janela de 30 dias pega uma vez cada
-// uma. Concentrando tudo no inicio do mes, a tela de Projecao (ultimos 30
-// dias) ficava sem quase nenhum custo fixo e mostrava margem de 71%.
+// Valor MENSAL de cada conta. Elas entram no caixa como provisao semanal
+// (ver o bloco de custos): lancadas de uma vez no dia do vencimento, cada
+// tela pegava ou nao aquela data e a margem pulava de 42% a 67% conforme o
+// recorte (7 dias, 30 dias, total). Rateadas por semana, todo recorte fecha
+// na mesma margem, que e o que a demonstracao precisa mostrar.
 const CUSTOS_FIXOS = [
-  ['Aluguel', 'Aluguel do salao', 4800, 5],
-  ['Folha', 'Folha quinzenal da equipe', 4800, 5],
-  ['Folha', 'Folha quinzenal da equipe', 4800, 20],
-  ['Energia', 'Conta de luz', 980, 10],
-  ['Agua', 'Conta de agua', 320, 15],
-  ['Gas', 'Recarga de gas GLP', 640, 20],
-  ['Internet', 'Internet e telefone', 220, 25],
+  ['Aluguel', 'Aluguel do salao', 4800],
+  ['Folha', 'Salarios da equipe', 9600],
+  ['Energia', 'Conta de luz', 980],
+  ['Agua', 'Conta de agua', 320],
+  ['Gas', 'Recarga de gas GLP', 640],
+  ['Internet', 'Internet e telefone', 220],
 ];
 
 const CUSTOS_VARIAVEIS = [
@@ -169,48 +169,65 @@ async function main() {
   // sai distorcido. No mes que entra pela metade no historico, o custo fixo e
   // rateado pelos dias efetivamente cobertos.
   const agora = new Date();
+  // Comeca no dia 1 do mes que cai ~60 dias atras. Se o periodo comecasse no
+  // meio do mes, esse mes perderia os vencimentos anteriores ao inicio (o
+  // aluguel e a folha do dia 5, por exemplo) e ficaria barato demais: a media
+  // do periodo ficava boa, mas a janela dos ultimos 30 dias, essa com todas as
+  // contas, aparecia com margem bem menor na tela de Projecao.
   const inicioHistorico = new Date(agora);
   inicioHistorico.setDate(inicioHistorico.getDate() - 60);
+  inicioHistorico.setDate(1);
+  inicioHistorico.setHours(0, 0, 0, 0);
 
-  const custos = [];
-  const meses = [];
-  const cursor = new Date(inicioHistorico.getFullYear(), inicioHistorico.getMonth(), 1);
-  while (cursor <= agora) {
-    meses.push(new Date(cursor));
-    cursor.setMonth(cursor.getMonth() + 1);
+  // Sabado move menos que dia util: o peso distribui a receita alvo pelos dias.
+  const dias = [];
+  let somaPesos = 0;
+  const cursorDia = new Date(inicioHistorico);
+  while (cursorDia <= agora) {
+    if (cursorDia.getDay() !== 0) {
+      // domingo a casa fecha
+      const peso = cursorDia.getDay() === 6 ? 0.6 : 1;
+      somaPesos += peso;
+      dias.push({ dia: new Date(cursorDia), peso });
+    }
+    cursorDia.setDate(cursorDia.getDate() + 1);
   }
 
-  for (const base of meses) {
-    const diasNoMes = new Date(base.getFullYear(), base.getMonth() + 1, 0).getDate();
+  const custos = [];
+  const SEMANA_MS = 7 * 86400000;
+  const ddmm = (d) =>
+    String(d.getDate()).padStart(2, '0') + '/' + String(d.getMonth() + 1).padStart(2, '0');
 
-    // A conta entra inteira se venceu dentro do periodo, ou nao entra. Sem
-    // rateio: e assim que aparece no extrato de quem toca a operacao.
+  for (let t = inicioHistorico.getTime(); t <= agora.getTime(); t += SEMANA_MS) {
+    const data = new Date(t);
+    data.setHours(9, 0, 0, 0);
+    if (data > agora) continue;
+
+    // Fixos: 1/52 do valor anual por semana.
     for (const fixo of CUSTOS_FIXOS) {
-      const data = new Date(base.getFullYear(), base.getMonth(), fixo[3], 9, 0, 0);
-      if (data > agora || data < inicioHistorico) continue;
       custos.push({
         tipo: 'CUSTO',
         categoria: fixo[0],
-        descricao: fixo[1],
-        valor: Math.round(fixo[2] * (0.97 + rnd() * 0.06) * 100) / 100,
+        descricao: fixo[1] + ' (semana ' + ddmm(data) + ')',
+        valor: Math.round(((fixo[2] * 12) / 52) * (0.97 + rnd() * 0.06) * 100) / 100,
         data,
       });
     }
 
-    for (let semana = 0; semana < 5; semana++) {
-      for (const variavel of CUSTOS_VARIAVEIS) {
-        if (rnd() < 0.3) continue;
-        const dia = Math.min(1 + semana * 7 + inteiro(0, 5), diasNoMes);
-        const data = new Date(base.getFullYear(), base.getMonth(), dia, inteiro(7, 17), 0, 0);
-        if (data > agora || data < inicioHistorico) continue;
-        custos.push({
-          tipo: 'CUSTO',
-          categoria: variavel[0],
-          descricao: variavel[1],
-          valor: Math.round((variavel[2] + rnd() * (variavel[3] - variavel[2])) * 100) / 100,
-          data,
-        });
-      }
+    // Variaveis: compra de insumo e embalagem acontece toda semana, nem toda
+    // categoria em toda semana.
+    for (const variavel of CUSTOS_VARIAVEIS) {
+      if (rnd() < 0.25) continue;
+      const dataCompra = new Date(data.getTime() + inteiro(0, 5) * 86400000);
+      dataCompra.setHours(inteiro(7, 17), 0, 0, 0);
+      if (dataCompra > agora) continue;
+      custos.push({
+        tipo: 'CUSTO',
+        categoria: variavel[0],
+        descricao: variavel[1],
+        valor: Math.round((variavel[2] + rnd() * (variavel[3] - variavel[2])) * 100) / 100,
+        data: dataCompra,
+      });
     }
   }
 
@@ -224,18 +241,6 @@ async function main() {
   // ---------- historico de pedidos entregues ----------
   const maxNumero = await prisma.pedido.aggregate({ _max: { numero: true } });
   let numero = (maxNumero._max.numero || 0) + 1;
-
-  // Sabado move menos que dia util: o peso distribui a receita alvo pelos dias.
-  const dias = [];
-  let somaPesos = 0;
-  for (let d = 60; d >= 1; d--) {
-    const dia = new Date(agora);
-    dia.setDate(dia.getDate() - d);
-    if (dia.getDay() === 0) continue; // domingo a casa fecha
-    const peso = dia.getDay() === 6 ? 0.6 : 1;
-    somaPesos += peso;
-    dias.push({ dia, peso });
-  }
 
   let totalEntregue = 0;
   let seqPedido = 0;
