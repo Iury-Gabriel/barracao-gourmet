@@ -24,7 +24,7 @@ export const config = {
   webhookDebouncePollMs: Number(process.env.WEBHOOK_DEBOUNCE_POLL_MS || 1000),
   // IA
   openaiApiKey: process.env.OPENAI_API_KEY || '',
-  openaiModel: process.env.OPENAI_MODEL || 'gpt-4o-mini',
+  openaiModel: process.env.OPENAI_MODEL || 'gpt-5.6-luna',
   openaiBaseUrl: process.env.OPENAI_BASE_URL || '',
   // UZapi defaults
   uzapiBaseUrl: process.env.UZAPI_BASE_URL || '',

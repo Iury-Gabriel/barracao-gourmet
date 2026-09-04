@@ -2197,7 +2197,7 @@ export async function gerarRespostaIA(params: {
   // Buscar chave da OpenAI (primeiro do banco, depois env)
   const configIA = await prisma.configuracaoIA.findFirst();
   const apiKey = configIA?.openaiApiKey || config.openaiApiKey;
-  const modelName = configIA?.openaiModel || config.openaiModel || 'gpt-4o-mini';
+  const modelName = configIA?.openaiModel || config.openaiModel || 'gpt-5.6-luna';
 
   if (!apiKey) {
     console.warn('[ia] gerarRespostaIA.sem_api_key');

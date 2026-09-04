@@ -245,7 +245,7 @@ model LancamentoFinanceiro {
 model ConfiguracaoIA {
   id            String   @id @default(uuid())
   openaiApiKey  String?
-  openaiModel   String   @default("gpt-4o-mini")
+  openaiModel   String   @default("gpt-5.6-luna")
   uzapiUrl      String?
   uzapiAdminToken String?
   // Liga/desliga global do agente de IA. Quando false, o webhook registra a

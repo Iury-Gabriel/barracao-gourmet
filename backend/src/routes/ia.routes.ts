@@ -44,7 +44,7 @@ router.put('/config', async (req, res) => {
       config = await prisma.configuracaoIA.create({
         data: {
           openaiApiKey,
-          openaiModel: openaiModel || 'gpt-4o-mini',
+          openaiModel: openaiModel || 'gpt-5.6-luna',
           uzapiUrl,
           uzapiAdminToken,
           ...(iaAtiva !== undefined ? { iaAtiva: !!iaAtiva } : {}),
