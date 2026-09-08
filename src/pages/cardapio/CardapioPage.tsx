@@ -872,7 +872,7 @@ export default function CardapioPage() {
     const itemKey = `${produto.id}::${variacaoNome || "sem-variacao"}`;
     const estoqueDisponivel = obterEstoqueDisponivel(produto, variacaoNome);
     if (qtdItemNoCarrinho(itemKey) >= estoqueDisponivel) {
-      toast.error("Quantidade maxima desse sabor ja atingida.");
+      toast.error("Quantidade maxima dessa opcao ja atingida.");
       return;
     }
     setCarrinho((prev) => {
@@ -1250,7 +1250,7 @@ export default function CardapioPage() {
                               )}
                               <div className="flex-1 min-w-0">
                                 <p className="text-sm font-medium truncate">{item.nome}</p>
-                                {item.variacaoNome && <p className="text-xs text-marrom-300">Sabor: {item.variacaoNome}</p>}
+                                {item.variacaoNome && <p className="text-xs text-marrom-300">Opcao: {item.variacaoNome}</p>}
                                 <p className="text-xs text-marrom-300">{fmt(item.preco)} cada</p>
                               </div>
                               <div className="flex items-center gap-1">
@@ -1793,7 +1793,7 @@ export default function CardapioPage() {
                         <div key={item.id} className="flex justify-between text-sm">
                           <div>
                             <p>{item.quantidade}x {item.produto?.nome}</p>
-                            {item.variacaoNome && <p className="text-xs text-marrom-300">Sabor: {item.variacaoNome}</p>}
+                            {item.variacaoNome && <p className="text-xs text-marrom-300">Opcao: {item.variacaoNome}</p>}
                           </div>
                           <span>{fmt(item.subtotal)}</span>
                         </div>
@@ -1956,7 +1956,7 @@ export default function CardapioPage() {
                         <div className="flex items-center gap-2">
                           <Button size="sm" onClick={() => adicionarItem(produto)} disabled={lojaFechada}>
                             <Plus className="h-4 w-4 mr-1" />
-                            Escolher sabor
+                            Escolher opcao
                           </Button>
                           {qtd > 0 && (
                             <Badge variant="outline" className="border-marrom-700 text-xs text-marrom-200">
@@ -2025,7 +2025,7 @@ export default function CardapioPage() {
       >
         <DialogContent className="max-w-sm border-marrom-800 bg-marrom-950 text-white">
           <DialogHeader>
-            <DialogTitle>Escolha o sabor</DialogTitle>
+            <DialogTitle>Escolha a opcao</DialogTitle>
           </DialogHeader>
           <p className="text-sm text-marrom-300">{produtoSelecionandoVariacao?.nome}</p>
           <div className="max-h-64 space-y-2 overflow-y-auto pr-1">

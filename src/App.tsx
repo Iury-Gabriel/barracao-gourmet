@@ -51,6 +51,7 @@ import DashboardPage from "./pages/DashboardPage";
 import AutomacoesPage from "./pages/AutomacoesPage";
 import ConfiguracoesPage from "./pages/ConfiguracoesPage";
 import ProjecaoGestaoPage from "./pages/gestao/ProjecaoGestaoPage";
+import KpisGestaoPage from "./pages/gestao/KpisGestaoPage";
 
 // WhatsApp
 import AtendimentosPage from "./pages/whatsapp/AtendimentosPage";
@@ -122,7 +123,7 @@ const App = () => (
                   <Route path="/gestao/financeira" element={<ProtectedRoute permission="aba_gestao_financeira"><FinanceiroPage /></ProtectedRoute>} />
                   <Route path="/gestao/projecao" element={<ProtectedRoute permission="aba_gestao_projecao"><ProjecaoGestaoPage /></ProtectedRoute>} />
                   {/* KPIs & Indicadores foi absorvido pelo Dashboard. */}
-                  <Route path="/gestao/kpis" element={<Navigate to="/dashboard" replace />} />
+                  <Route path="/gestao/kpis" element={<ProtectedRoute permission="aba_gestao_dashboard"><KpisGestaoPage /></ProtectedRoute>} />
                   <Route path="/financeiro" element={<ProtectedRoute permission="aba_financeiro_visao"><FinanceiroPage /></ProtectedRoute>} />
                   <Route path="/financeiro/lancamentos" element={<ProtectedRoute permission="aba_financeiro_lancamentos"><LancamentosFinanceiroPage /></ProtectedRoute>} />
                   {/* Custos virou sub-aba do Financeiro. */}

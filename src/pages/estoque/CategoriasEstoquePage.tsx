@@ -340,7 +340,7 @@ export default function CategoriasEstoquePage() {
             <Input
               value={nomeCategoria}
               onChange={(e) => setNomeCategoria(e.target.value)}
-              placeholder="Ex: Vinhos Tintos"
+              placeholder="Ex: Pratos do Dia"
             />
             <div className="space-y-1">
               <Label>Adicional no cartao (R$ por unidade)</Label>

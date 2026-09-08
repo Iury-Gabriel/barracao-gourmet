@@ -141,7 +141,7 @@ export default function ProdutosPage() {
   const valorTotalEstoque = produtos.reduce((total: number, produto: any) => total + ((produto.custoMedio ?? 0) * (produto.estoque ?? 0)), 0);
   const categoriasSelect = Array.from(new Set([...categorias, ...(form.categoria ? [form.categoria] : [])])).sort((a, b) => a.localeCompare(b));
   const estoqueTotalVariacoes = form.variacoes.reduce((total, variacao) => total + Number(variacao.estoque || 0), 0);
-  const saboresComEstoqueBaixo = form.variacoes.filter((variacao) => Number(variacao.estoque || 0) <= Number(variacao.estoqueMinimo || 0)).length;
+  const opcoesComEstoqueBaixo = form.variacoes.filter((variacao) => Number(variacao.estoque || 0) <= Number(variacao.estoqueMinimo || 0)).length;
 
   const criar = useMutation({
     mutationFn: (data: any) => api.post("/api/estoque", data),
@@ -455,7 +455,7 @@ export default function ProdutosPage() {
             <DialogTitle>{editando ? "Editar Produto" : "Novo Produto"}</DialogTitle>
             <p className="text-sm text-muted-foreground">
               {form.controlaEstoquePorVariacao
-                ? "Acompanhe o estoque total do produto e os saldos de cada sabor no mesmo lugar."
+                ? "Acompanhe o estoque total do produto e os saldos de cada opcao no mesmo lugar."
                 : "Edite os dados principais do produto e acompanhe o estoque geral com mais clareza."}
             </p>
           </DialogHeader>
@@ -538,13 +538,13 @@ export default function ProdutosPage() {
                 <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Estoque do produto</p>
                 <p className="mt-2 text-3xl font-semibold">{form.controlaEstoquePorVariacao ? estoqueTotalVariacoes : Number(form.estoque || 0)}</p>
                 <p className="mt-1 text-sm text-muted-foreground">
-                  {form.controlaEstoquePorVariacao ? "Total somado automaticamente pelos sabores." : "Quantidade geral disponivel para venda."}
+                  {form.controlaEstoquePorVariacao ? "Total somado automaticamente pelas opcoes." : "Quantidade geral disponivel para venda."}
                 </p>
               </div>
 
               <div className="rounded-xl border bg-muted/30 p-4">
                 <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                  {form.controlaEstoquePorVariacao ? "Sabores cadastrados" : "Estoque minimo"}
+                  {form.controlaEstoquePorVariacao ? "Opcoes cadastradas" : "Estoque minimo"}
                 </p>
                 <p className="mt-2 text-3xl font-semibold">{form.controlaEstoquePorVariacao ? form.variacoes.length : Number(form.estoqueMinimo || 0)}</p>
                 <p className="mt-1 text-sm text-muted-foreground">
@@ -554,9 +554,9 @@ export default function ProdutosPage() {
 
               {form.controlaEstoquePorVariacao && (
                 <div className="rounded-xl border bg-muted/30 p-4">
-                  <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Sabores em alerta</p>
-                  <p className="mt-2 text-3xl font-semibold">{saboresComEstoqueBaixo}</p>
-                  <p className="mt-1 text-sm text-muted-foreground">Sabores com estoque igual ou abaixo do minimo configurado.</p>
+                  <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Opcoes em alerta</p>
+                  <p className="mt-2 text-3xl font-semibold">{opcoesComEstoqueBaixo}</p>
+                  <p className="mt-1 text-sm text-muted-foreground">Opcoes com estoque igual ou abaixo do minimo configurado.</p>
                 </div>
               )}
             </div>
@@ -600,7 +600,7 @@ export default function ProdutosPage() {
                 />
                 <div>
                   <Label>Controlar estoque pelas variacoes</Label>
-                  <p className="text-xs text-muted-foreground">Use para produtos em que cada sabor tenha estoque proprio.</p>
+                  <p className="text-xs text-muted-foreground">Use para produtos em que cada opcao tenha estoque proprio.</p>
                 </div>
               </div>
             </div>
@@ -611,8 +611,8 @@ export default function ProdutosPage() {
                   <Label>Variacoes do produto</Label>
                   <p className="text-xs text-muted-foreground">
                     {form.controlaEstoquePorVariacao
-                      ? "Cada sabor tem o proprio estoque, e o total do produto e calculado automaticamente."
-                      : "Cadastre variacoes como sabor, tamanho ou opcao visual do produto."}
+                      ? "Cada opcao tem o proprio estoque, e o total do produto e calculado automaticamente."
+                      : "Cadastre variacoes do prato, como tamanho (P, M, G) ou tipo de carne."}
                   </p>
                 </div>
                 <Button type="button" variant="outline" size="sm" onClick={adicionarVariacao}>
@@ -624,7 +624,7 @@ export default function ProdutosPage() {
               <div className="space-y-1">
                 <Label>Tipo da variacao</Label>
                 <Input
-                  placeholder="Ex: Sabor"
+                  placeholder="Ex: Tamanho"
                   value={form.tipoVariacao}
                   onChange={(e) => setForm((prev) => ({ ...prev, tipoVariacao: e.target.value }))}
                 />
@@ -709,13 +709,13 @@ export default function ProdutosPage() {
                 <Input type="number" step="0.01" value={form.preco} onChange={(e) => setForm((prev) => ({ ...prev, preco: e.target.value }))} />
               </div>
               <div className="space-y-1">
-                <Label>Custo medio (R$) *</Label>
+                <Label>Custo medio (R$)</Label>
                 <Input
                   type="number"
                   step="0.01"
                   value={form.custoMedio}
                   onChange={(e) => setForm((prev) => ({ ...prev, custoMedio: e.target.value }))}
-                  placeholder="Quanto custou"
+                  placeholder="Opcional"
                 />
               </div>
               {form.controlaEstoque && (

@@ -58,6 +58,7 @@ const gestaoItems: NavItem[] = [
   { to: "/dashboard",           label: "Dashboard",           icon: BarChart3,      permission: "aba_gestao_dashboard" },
   { to: "/gestao/financeira",   label: "Financeiro",          icon: DollarSign,     permission: "aba_gestao_financeira" },
   { to: "/gestao/projecao",     label: "Projeção",            icon: TrendingUp,     permission: "aba_gestao_projecao" },
+  { to: "/gestao/kpis",         label: "KPIs de Gestão",      icon: BarChart3,      permission: "aba_gestao_dashboard" },
   // Configuracoes tambem tem a engrenagem no rodape, mas o rodape e facil de nao
   // achar. Aqui aparece como item normal, no modulo em que a rota ja era
   // classificada pelo resolvedModuleId.

@@ -155,7 +155,7 @@ export default function NovoPedidoPage() {
   const abrirSelecaoDeVariacao = (produto: any) => {
     const variacoesDisponiveis = obterVariacoesDisponiveis(produto);
     if (variacoesDisponiveis.length === 0) {
-      toast.error("Nao ha sabores com estoque disponivel para esse produto.");
+      toast.error("Nao ha opcoes com estoque disponivel para esse produto.");
       return;
     }
     setProdutoSelecionandoVariacao(produto);
@@ -461,7 +461,7 @@ export default function NovoPedidoPage() {
                         </p>
                       )}
                       {temVariacoes && (
-                        <p className="text-xs font-medium text-primary">Clique para escolher o sabor</p>
+                        <p className="text-xs font-medium text-primary">Clique para escolher a opcao</p>
                       )}
                     </div>
                     <div className="flex items-center gap-2">
@@ -524,7 +524,7 @@ export default function NovoPedidoPage() {
                 <div key={item.itemKey} className="flex items-center gap-3 border-b py-2 last:border-0">
                   <div className="flex-1">
                     <p className="text-sm font-medium">{item.nome}</p>
-                    {item.variacaoNome && <p className="text-xs text-muted-foreground">Sabor: {item.variacaoNome}</p>}
+                    {item.variacaoNome && <p className="text-xs text-muted-foreground">Opcao: {item.variacaoNome}</p>}
                     <p className="text-xs text-muted-foreground">{fmt(item.preco)} cada</p>
                   </div>
                   <div className="flex items-center gap-2">
@@ -575,7 +575,7 @@ export default function NovoPedidoPage() {
       <Dialog open={variacaoDialogOpen} onOpenChange={setVariacaoDialogOpen}>
         <DialogContent className="max-w-sm">
           <DialogHeader>
-            <DialogTitle>Escolha o sabor</DialogTitle>
+            <DialogTitle>Escolha a opcao</DialogTitle>
           </DialogHeader>
           <p className="text-sm text-muted-foreground">{produtoSelecionandoVariacao?.nome}</p>
           <div className="max-h-64 space-y-2 overflow-y-auto">

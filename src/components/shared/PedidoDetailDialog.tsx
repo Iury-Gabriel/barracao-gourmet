@@ -181,7 +181,7 @@ export function PedidoDetailDialog({ open, onOpenChange, pedidoId }: PedidoDetai
                     <div key={item.id} className="flex items-center justify-between py-2 border-b last:border-0">
                       <div>
                         <p className="font-medium text-sm">{item.produto?.nome}</p>
-                        {item.variacaoNome && <p className="text-xs text-muted-foreground">Sabor: {item.variacaoNome}</p>}
+                        {item.variacaoNome && <p className="text-xs text-muted-foreground">Opcao: {item.variacaoNome}</p>}
                         <p className="text-xs text-muted-foreground">{item.quantidade}x {fmt(item.precoUnit)}</p>
                       </div>
                       <span className="font-bold text-sm">{fmt(item.subtotal)}</span>

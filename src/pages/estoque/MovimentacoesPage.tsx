@@ -122,7 +122,7 @@ export default function MovimentacoesPage() {
                 <TableRow>
                   <TableHead>Tipo</TableHead>
                   <TableHead>Produto</TableHead>
-                  <TableHead>Sabor</TableHead>
+                  <TableHead>Opcao</TableHead>
                   <TableHead>Categoria</TableHead>
                   <TableHead>Quantidade</TableHead>
                   <TableHead>Custo Unit.</TableHead>
@@ -196,13 +196,13 @@ export default function MovimentacoesPage() {
 
               {exigeVariacao && (
                 <div className="space-y-1">
-                  <Label>Sabor *</Label>
+                  <Label>Opcao *</Label>
                   <Select
                     value={form.variacaoNome}
                     onValueChange={(value) => setForm((prev) => ({ ...prev, variacaoNome: value }))}
                   >
                     <SelectTrigger>
-                      <SelectValue placeholder="Selecionar sabor..." />
+                      <SelectValue placeholder="Selecionar opcao..." />
                     </SelectTrigger>
                     <SelectContent>
                       {variacoesDisponiveis.map((variacao: any) => (
@@ -295,7 +295,7 @@ export default function MovimentacoesPage() {
                 </div>
                 {exigeVariacao && (
                   <div className="flex items-center justify-between">
-                    <span className="text-muted-foreground">Sabor</span>
+                    <span className="text-muted-foreground">Opcao</span>
                     <span className="font-medium">{form.variacaoNome || "-"}</span>
                   </div>
                 )}
@@ -320,7 +320,7 @@ export default function MovimentacoesPage() {
                   </>
                 )}
                 <p className="pt-2 text-xs text-muted-foreground">
-                  Quando o produto controla estoque por sabor, a movimentacao vai direto no sabor escolhido.
+                  Quando o produto controla estoque por opcao, a movimentacao vai direto na opcao escolhida.
                 </p>
               </CardContent>
             </Card>

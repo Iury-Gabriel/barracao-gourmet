@@ -20,7 +20,7 @@ function fmt(v: number) {
   return v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 }
 
-const emptyForm = { nome: "", telefone: "", email: "", endereco: "", bairro: "", cidade: "São Paulo", observacoes: "", tipoEndereco: "RESIDENCIAL", senha: "", entregaGratis: false };
+const emptyForm = { nome: "", telefone: "", email: "", endereco: "", bairro: "", cidade: "São Paulo", observacoes: "", tipoEndereco: "RESIDENCIAL", senha: "", cep: "", entregaGratis: false };
 
 export default function ClientesPage() {
   const queryClient = useQueryClient();
@@ -51,7 +51,7 @@ export default function ClientesPage() {
   const abrirCriar = () => { setEditando(null); setForm(emptyForm); setModalOpen(true); };
   const abrirEditar = (c: any) => {
     setEditando(c);
-    setForm({ nome: c.nome, telefone: c.telefone ?? "", email: c.email ?? "", endereco: c.endereco ?? "", bairro: c.bairro ?? "", cidade: c.cidade ?? "São Paulo", observacoes: c.observacoes ?? "", entregaGratis: Boolean(c.entregaGratis) , tipoEndereco: c.tipoEndereco ?? "RESIDENCIAL"});
+    setForm({ nome: c.nome, telefone: c.telefone ?? "", email: c.email ?? "", endereco: c.endereco ?? "", bairro: c.bairro ?? "", cidade: c.cidade ?? "São Paulo", observacoes: c.observacoes ?? "", entregaGratis: Boolean(c.entregaGratis) , tipoEndereco: c.tipoEndereco ?? "RESIDENCIAL", cep: c.cep ?? ""});
     setModalOpen(true);
   };
   const fecharModal = () => { setModalOpen(false); setEditando(null); setForm(emptyForm); };
@@ -191,6 +191,17 @@ export default function ClientesPage() {
                 </p>
               </div>
             )}
+            <div className="space-y-1">
+              <Label>CEP</Label>
+              <Input
+                value={form.cep}
+                onChange={e => setForm(f => ({ ...f, cep: e.target.value }))}
+                placeholder="00000-000"
+              />
+              <p className="text-[11px] text-muted-foreground">
+                É por ele que o frete da entrega é calculado.
+              </p>
+            </div>
             <div className="space-y-1"><Label>Endereço</Label><Input value={form.endereco} onChange={e => setForm(f => ({ ...f, endereco: e.target.value }))} placeholder="Rua, número" /></div>
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1"><Label>Bairro</Label><Input value={form.bairro} onChange={e => setForm(f => ({ ...f, bairro: e.target.value }))} /></div>
