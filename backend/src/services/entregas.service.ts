@@ -49,7 +49,7 @@ const SELECT_PEDIDO_ENTREGA = {
   observacoes: true,
   criadoEm: true,
   entregadorId: true,
-  cliente: { select: { nome: true, telefone: true } },
+  cliente: { select: { nome: true, telefone: true, tipoEndereco: true } },
   itens: { select: { quantidade: true, variacaoNome: true, produto: { select: { nome: true } } } },
 } as const;
 

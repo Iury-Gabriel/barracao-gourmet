@@ -327,8 +327,11 @@ async function processarWebhookMercadoPago(payload: {
   if (!pedido && payment.externalReference) {
     const matchNumero = payment.externalReference.match(/^pedido-(\d+)$/i);
     if (matchNumero) {
-      pedido = await prisma.pedido.findUnique({
+      // O numero reinicia todo dia, entao sozinho ele nao identifica mais um
+      // pedido: pega o mais recente com aquele numero, que e o do dia corrente.
+      pedido = await prisma.pedido.findFirst({
         where: { numero: Number(matchNumero[1]) },
+        orderBy: { criadoEm: 'desc' },
         include: {
           itens: { include: { produto: true } },
           historico: { orderBy: { criadoEm: 'asc' } },

@@ -13,13 +13,14 @@ import { Plus, Search, Eye, UserCheck, UserX, PencilLine, Truck } from "lucide-r
 import { toast } from "sonner";
 import { formatDistanceToNow } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ClienteDetailDialog } from "@/components/shared/ClienteDetailDialog";
 
 function fmt(v: number) {
   return v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 }
 
-const emptyForm = { nome: "", telefone: "", email: "", endereco: "", bairro: "", cidade: "São Paulo", observacoes: "", entregaGratis: false };
+const emptyForm = { nome: "", telefone: "", email: "", endereco: "", bairro: "", cidade: "São Paulo", observacoes: "", tipoEndereco: "RESIDENCIAL", entregaGratis: false };
 
 export default function ClientesPage() {
   const queryClient = useQueryClient();
@@ -50,7 +51,7 @@ export default function ClientesPage() {
   const abrirCriar = () => { setEditando(null); setForm(emptyForm); setModalOpen(true); };
   const abrirEditar = (c: any) => {
     setEditando(c);
-    setForm({ nome: c.nome, telefone: c.telefone ?? "", email: c.email ?? "", endereco: c.endereco ?? "", bairro: c.bairro ?? "", cidade: c.cidade ?? "São Paulo", observacoes: c.observacoes ?? "", entregaGratis: Boolean(c.entregaGratis) });
+    setForm({ nome: c.nome, telefone: c.telefone ?? "", email: c.email ?? "", endereco: c.endereco ?? "", bairro: c.bairro ?? "", cidade: c.cidade ?? "São Paulo", observacoes: c.observacoes ?? "", entregaGratis: Boolean(c.entregaGratis) , tipoEndereco: c.tipoEndereco ?? "RESIDENCIAL"});
     setModalOpen(true);
   };
   const fecharModal = () => { setModalOpen(false); setEditando(null); setForm(emptyForm); };
@@ -165,6 +166,16 @@ export default function ClientesPage() {
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1"><Label>Telefone</Label><Input value={form.telefone} onChange={e => setForm(f => ({ ...f, telefone: e.target.value }))} placeholder="(11) 99999-9999" /></div>
               <div className="space-y-1"><Label>E-mail</Label><Input value={form.email} onChange={e => setForm(f => ({ ...f, email: e.target.value }))} /></div>
+            </div>
+            <div className="space-y-1">
+              <Label>Tipo de endereço</Label>
+              <Select value={form.tipoEndereco} onValueChange={v => setForm(f => ({ ...f, tipoEndereco: v }))}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="RESIDENCIAL">Residencial</SelectItem>
+                  <SelectItem value="COMERCIAL">Empresarial</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
             <div className="space-y-1"><Label>Endereço</Label><Input value={form.endereco} onChange={e => setForm(f => ({ ...f, endereco: e.target.value }))} placeholder="Rua, número" /></div>
             <div className="grid grid-cols-2 gap-3">

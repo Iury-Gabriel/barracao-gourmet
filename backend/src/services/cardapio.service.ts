@@ -136,13 +136,24 @@ async function sincronizarPagamentoPixMercadoPago(pedido: any) {
   }
 }
 
-async function proximoNumeroPedido(): Promise<number> {
-  const contador = await prisma.contador.upsert({
-    where: { id: 'pedido_numero' },
-    update: { valor: { increment: 1 } },
-    create: { id: 'pedido_numero', valor: 1 },
-  });
-  return contador.valor;
+// O dia que a numeracao segue e o da casa, nao o UTC do servidor: em UTC a
+// virada cairia as 21h, no meio do expediente.
+export function diaNumeracaoPedido(): string {
+  return new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Sao_Paulo' }).format(new Date());
+}
+
+async function proximoNumeroPedido(): Promise<{ numero: number; dia: string }> {
+  const dia = diaNumeracaoPedido();
+  // Reinicia sozinho na virada do dia. Feito em uma unica instrucao porque com
+  // ler-e-depois-gravar dois pedidos ao mesmo tempo pegariam o mesmo numero.
+  const linhas = await prisma.$queryRaw<Array<{ valor: number }>>`
+    INSERT INTO contadores (id, valor, dia) VALUES ('pedido_numero', 1, ${dia})
+    ON CONFLICT (id) DO UPDATE SET
+      valor = CASE WHEN contadores.dia = ${dia} THEN contadores.valor + 1 ELSE 1 END,
+      dia = ${dia}
+    RETURNING valor
+  `;
+  return { numero: Number(linhas[0]?.valor ?? 1), dia };
 }
 
 async function ordenarProdutosPorPedidos(produtos: any[]) {
@@ -661,7 +672,7 @@ export async function criarPedidoCardapio(data: {
     0,
     Number((total + valorFrete + adicionalCartao - descontoCupom).toFixed(2)),
   );
-  const numero = await proximoNumeroPedido();
+  const { numero, dia: diaNumero } = await proximoNumeroPedido();
 
   let mercadoPagoCheckout: any = null;
   let cartaoPagamento: { paymentId: string; status: string; statusDetail?: string } | null = null;
@@ -760,6 +771,7 @@ export async function criarPedidoCardapio(data: {
   const pedido = await prisma.pedido.create({
     data: {
       numero,
+      diaNumero,
       clienteId,
       nomeCliente: data.nomeCliente,
       telefoneCliente: data.telefoneCliente,

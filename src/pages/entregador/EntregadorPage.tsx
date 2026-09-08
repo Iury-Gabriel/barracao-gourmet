@@ -4,7 +4,9 @@ import { api } from "@/hooks/useApi";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { MapPin, Navigation, Check, AlertTriangle, Wifi, WifiOff } from "lucide-react";
+import { MapPin, Navigation, Check, AlertTriangle, Wifi, WifiOff, Phone, Clock, Building2, Home } from "lucide-react";
+import { formatDistanceToNowStrict, differenceInMinutes } from "date-fns";
+import { ptBR } from "date-fns/locale";
 import { toast } from "sonner";
 
 type Pedido = {
@@ -15,11 +17,32 @@ type Pedido = {
   nomeCliente?: string | null;
   enderecoEntrega?: string | null;
   observacoes?: string | null;
-  cliente?: { nome: string; telefone: string } | null;
+  criadoEm?: string | null;
+  telefoneCliente?: string | null;
+  cliente?: { nome: string; telefone: string; tipoEndereco?: string | null } | null;
   itens?: Array<{ quantidade: number; variacaoNome?: string | null; produto: { nome: string } }>;
 };
 
 const INTERVALO_ENVIO_MS = 15000;
+
+// Quanto tempo o cliente esta esperando desde que o pedido entrou. Passando de
+// 45 min o aviso fica vermelho: e o sinal de que aquela entrega furou a fila.
+function esperaDoCliente(criadoEm?: string | null) {
+  if (!criadoEm) return null;
+  const desde = new Date(criadoEm);
+  if (Number.isNaN(desde.getTime())) return null;
+  return {
+    texto: formatDistanceToNowStrict(desde, { locale: ptBR }),
+    minutos: differenceInMinutes(new Date(), desde),
+  };
+}
+
+// Só os digitos, no formato que o WhatsApp aceita no link.
+function digitos(telefone?: string | null) {
+  const limpo = (telefone || "").replace(/\D/g, "");
+  if (limpo.length < 10) return null;
+  return limpo.startsWith("55") ? limpo : "55" + limpo;
+}
 
 function fmt(v: number) {
   return v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
@@ -154,14 +177,68 @@ export default function EntregadorPage() {
           <Badge variant="outline">{fmt(pedido.total)}</Badge>
         </div>
 
-        <p className="text-sm font-medium">
-          {pedido.cliente?.nome ?? pedido.nomeCliente ?? "Sem nome"}
-        </p>
+        <div className="flex items-center justify-between gap-2">
+          <p className="text-sm font-medium">
+            {pedido.cliente?.nome ?? pedido.nomeCliente ?? "Sem nome"}
+          </p>
+          {pedido.cliente?.tipoEndereco === "COMERCIAL" ? (
+            <Badge variant="outline" className="shrink-0 gap-1 text-[10px]">
+              <Building2 className="h-3 w-3" /> Empresa
+            </Badge>
+          ) : (
+            <Badge variant="outline" className="shrink-0 gap-1 text-[10px]">
+              <Home className="h-3 w-3" /> Casa
+            </Badge>
+          )}
+        </div>
+
+        {(() => {
+          const espera = esperaDoCliente(pedido.criadoEm);
+          if (!espera) return null;
+          const atrasado = espera.minutos >= 45;
+          return (
+            <div
+              className={`flex items-center gap-1.5 rounded px-2 py-1 text-sm font-semibold ${
+                atrasado ? "bg-red-500/15 text-red-400" : "bg-muted text-muted-foreground"
+              }`}
+            >
+              <Clock className="h-4 w-4 shrink-0" />
+              <span>Cliente aguardando há {espera.texto}</span>
+            </div>
+          );
+        })()}
 
         <div className="flex gap-2 text-sm text-muted-foreground">
           <MapPin className="mt-0.5 h-4 w-4 shrink-0" />
           <span>{pedido.enderecoEntrega || "Endereço não informado"}</span>
         </div>
+
+        {(() => {
+          const telefone = pedido.telefoneCliente || pedido.cliente?.telefone;
+          const numero = digitos(telefone);
+          if (!telefone) return null;
+          return (
+            <div className="flex items-center gap-2">
+              <a
+                href={`tel:${telefone}`}
+                className="flex items-center gap-1.5 text-sm text-muted-foreground underline-offset-2 hover:underline"
+              >
+                <Phone className="h-4 w-4 shrink-0" />
+                {telefone}
+              </a>
+              {numero && (
+                <a
+                  href={`https://wa.me/${numero}`}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="text-xs font-medium text-emerald-500 underline-offset-2 hover:underline"
+                >
+                  WhatsApp
+                </a>
+              )}
+            </div>
+          );
+        })()}
 
         <ul className="space-y-0.5 text-sm">
           {(pedido.itens ?? []).map((item, i) => (

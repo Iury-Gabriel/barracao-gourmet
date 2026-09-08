@@ -144,6 +144,7 @@ export async function criarCliente(data: {
   telefone?: string;
   email?: string;
   endereco?: string;
+  tipoEndereco?: string;
   bairro?: string;
   cidade?: string;
   cpf?: string;
@@ -159,6 +160,7 @@ export async function atualizarCliente(id: string, data: Partial<{
   telefone: string;
   email: string;
   endereco: string;
+  tipoEndereco: string;
   bairro: string;
   cidade: string;
   cpf: string;

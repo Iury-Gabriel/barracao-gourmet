@@ -239,8 +239,15 @@ async function main() {
   );
 
   // ---------- historico de pedidos entregues ----------
-  const maxNumero = await prisma.pedido.aggregate({ _max: { numero: true } });
-  let numero = (maxNumero._max.numero || 0) + 1;
+  // A numeracao reinicia a cada dia, entao a demo numera por dia tambem: cada
+  // dia comeca no #1, como vai acontecer na operacao real.
+  const diaChave = (d) =>
+    d.getFullYear() +
+    '-' +
+    String(d.getMonth() + 1).padStart(2, '0') +
+    '-' +
+    String(d.getDate()).padStart(2, '0');
+  let numero = 0;
 
   let totalEntregue = 0;
   let seqPedido = 0;
@@ -258,6 +265,9 @@ async function main() {
       (p) => !p.diasSemana || p.diasSemana.length === 0 || p.diasSemana.includes(diaSemana)
     );
     if (doDia.length === 0) continue;
+
+    numero = 0; // dia novo, contagem recomeca
+    const diaNumero = diaChave(entrada.dia);
 
     // Cada dia recebe sua fatia da receita alvo, com uma folga aleatoria para
     // o faturamento nao ficar identico todo dia.
@@ -284,11 +294,12 @@ async function main() {
       if (forma === 'DINHEIRO') obs.push('Troco para R$ ' + Math.ceil(total / 50) * 50 + '.');
 
       const pedidoId = id('ped', ++seqPedido);
-      const numeroAtual = numero++;
+      const numeroAtual = ++numero; // primeiro pedido do dia e o #1
       await prisma.pedido.create({
         data: {
           id: pedidoId,
           numero: numeroAtual,
+          diaNumero,
           clienteId: cliente.id,
           nomeCliente: cliente.nome,
           telefoneCliente: cliente.telefone,
@@ -345,6 +356,13 @@ async function main() {
   const catalogoHoje = doDiaHoje.length ? doDiaHoje : produtos;
   const pipeline = [['RECEBIDO', 3], ['EM_PREPARO', 2], ['PRONTO', 2], ['EM_ENTREGA', 2]];
 
+  const diaHoje =
+    hoje.getFullYear() +
+    '-' +
+    String(hoje.getMonth() + 1).padStart(2, '0') +
+    '-' +
+    String(hoje.getDate()).padStart(2, '0');
+
   let minutos = 42;
   let noPipeline = 0;
   for (const etapa of pipeline) {
@@ -368,7 +386,8 @@ async function main() {
       await prisma.pedido.create({
         data: {
           id: id('ped', ++seqPedido),
-          numero: numero++,
+          numero: ++numero,
+          diaNumero: diaHoje,
           clienteId: cliente.id,
           nomeCliente: cliente.nome,
           telefoneCliente: cliente.telefone,
@@ -404,8 +423,8 @@ async function main() {
   // Mantem a numeracao real seguindo de onde a demo parou.
   await prisma.contador.upsert({
     where: { id: 'pedido_numero' },
-    update: { valor: numero - 1 },
-    create: { id: 'pedido_numero', valor: numero - 1 },
+    update: { valor: numero, dia: diaHoje },
+    create: { id: 'pedido_numero', valor: numero, dia: diaHoje },
   });
 
   const lucro = totalEntregue - custoTotal;
@@ -418,7 +437,7 @@ async function main() {
   console.log('  lucro            R$ ' + lucro.toFixed(2));
   console.log('  margem           ' + ((lucro / totalEntregue) * 100).toFixed(1) + '%');
   console.log('  ticket medio     R$ ' + (totalEntregue / seqPedido).toFixed(2));
-  console.log('  proximo pedido   #' + numero);
+  console.log('  proximo pedido   #' + (numero + 1) + ' (numeracao reinicia por dia)');
 }
 
 main()

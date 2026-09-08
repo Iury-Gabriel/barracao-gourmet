@@ -119,6 +119,9 @@ model Cliente {
   cpf         String?
   dataNasc    String?
   observacoes String?
+  // RESIDENCIAL ou COMERCIAL. Empresa costuma receber em horario comercial e
+  // ter portaria, entao a entrega muda conforme o tipo.
+  tipoEndereco String  @default("RESIDENCIAL")
   ativo       Boolean  @default(true)
   // Isencao de frete individual: quando true, todo pedido DELIVERY deste cliente sai com frete 0.
   entregaGratis Boolean @default(false)
@@ -146,13 +149,19 @@ model InteracaoCliente {
 model Contador {
   id    String @id @default("pedido_numero")
   valor Int    @default(0)
+  // Dia (YYYY-MM-DD, fuso da casa) a que o valor se refere. Virou o dia, a
+  // contagem recomeca do 1.
+  dia   String @default("")
 
   @@map("contadores")
 }
 
 model Pedido {
   id              String   @id @default(uuid())
-  numero          Int      @unique @default(0)
+  // A numeracao reinicia todo dia, entao o numero so e unico dentro do dia:
+  // um unique global impediria o #1 de amanha de existir.
+  numero          Int      @default(0)
+  diaNumero       String   @default("")
   clienteId       String?
   nomeCliente     String?
   telefoneCliente String?
@@ -191,6 +200,7 @@ model Pedido {
   historico HistoricoPedido[]
 
   @@index([entregadorId])
+  @@unique([numero, diaNumero])
   @@map("pedidos")
 }
 
