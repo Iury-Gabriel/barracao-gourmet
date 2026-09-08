@@ -384,11 +384,20 @@ function prepararProdutoCardapio(produto: any, ocultarVariacoesSemEstoque = fals
   );
 }
 
-export async function listarProdutosCardapio() {
+/**
+ * Cardapio publico. Com empresa logada, mostra tambem os itens exclusivos e
+ * troca o preco pelo da tabela empresarial.
+ */
+export async function listarProdutosCardapio(empresaLogada = false) {
   const [produtos, mapaAcrescimo] = await Promise.all([
     prisma.produto.findMany({
       // vendavel exclui insumo (arroz, embalagem), que existe so no estoque.
-      where: { disponivel: true, vendavel: true },
+      // Item exclusivo de empresa nao aparece para o cliente comum.
+      where: {
+        disponivel: true,
+        vendavel: true,
+        ...(empresaLogada ? {} : { exclusivoEmpresa: false }),
+      },
       orderBy: [{ categoria: 'asc' }, { nome: 'asc' }],
       select: {
         id: true,
@@ -477,6 +486,7 @@ export async function listarCategoriasCardapio() {
 }
 
 export async function criarPedidoCardapio(data: {
+  empresaId?: string;
   nomeCliente: string;
   telefoneCliente: string;
   emailCliente?: string;
@@ -511,6 +521,7 @@ export async function criarPedidoCardapio(data: {
     throw { status: 400, message: configLoja.mensagemFechado || 'A loja está fechada no momento. Tente novamente mais tarde.' };
   }
 
+  const empresaId = data.empresaId;
   const produtosIds = data.itens.map((i) => i.produtoId);
   const [produtos, mapaAcrescimo] = await Promise.all([
     prisma.produto.findMany({
@@ -524,6 +535,8 @@ export async function criarPedidoCardapio(data: {
         controlaEstoque: true,
         diasSemana: true,
         preco: true,
+        precoEmpresa: true,
+        exclusivoEmpresa: true,
         estoque: true,
         disponivel: true,
         variacoes: {
@@ -580,14 +593,22 @@ export async function criarPedidoCardapio(data: {
       }
       variacaoNome = variacaoEncontrada.nome;
     }
-    const subtotal = produto.preco * item.quantidade;
+    // O preco cobrado sai daqui, do banco, nunca do que o navegador mandou.
+    // Empresa logada paga a tabela dela; sem isso ela veria o preco do
+    // convenio na tela e seria cobrada o do varejo.
+    const produtoBaseItem = produtos.find((entry) => entry.id === item.produtoId) as any;
+    const precoAplicado =
+      empresaId && produtoBaseItem?.precoEmpresa != null
+        ? Number(produtoBaseItem.precoEmpresa)
+        : produto.preco;
+    const subtotal = precoAplicado * item.quantidade;
     total += subtotal;
     acrescimoCartaoTotal += (mapaAcrescimo.get(produto.categoria) || 0) * item.quantidade;
     return {
       produtoId: item.produtoId,
       variacaoNome: variacaoNome || null,
       quantidade: item.quantidade,
-      precoUnit: produto.preco,
+      precoUnit: precoAplicado,
       subtotal,
     };
   });
@@ -1059,4 +1080,45 @@ export async function contatoPublicoCardapio() {
       select: { telefone: true },
     }));
   return { whatsapp: qualquer?.telefone ?? null };
+}
+
+/**
+ * Login do cardapio empresarial.
+ *
+ * So entra cliente marcado como empresarial e com senha definida no painel.
+ * A mesma mensagem serve para email errado, senha errada e cliente sem acesso:
+ * respostas diferentes revelariam quais empresas existem na base.
+ */
+export async function loginEmpresaCardapio(email: string, senha: string) {
+  const bcrypt = (await import('bcryptjs')).default;
+  const { signEmpresaToken } = await import('../lib/jwt');
+
+  const erro = { status: 401, message: 'E-mail ou senha incorretos.' };
+  const alvo = String(email || '').trim().toLowerCase();
+  if (!alvo || !senha) throw erro;
+
+  const cliente = await prisma.cliente.findFirst({
+    where: { email: { equals: alvo, mode: 'insensitive' }, tipoEndereco: 'COMERCIAL' },
+    select: { id: true, nome: true, email: true, senhaHash: true, ativo: true },
+  });
+  if (!cliente?.senhaHash || !cliente.ativo) throw erro;
+
+  const ok = await bcrypt.compare(senha, cliente.senhaHash);
+  if (!ok) throw erro;
+
+  return {
+    token: signEmpresaToken({ clienteId: cliente.id, nome: cliente.nome }),
+    empresa: { id: cliente.id, nome: cliente.nome, email: cliente.email },
+  };
+}
+
+/** Le o token empresarial do header. Sem token ou token invalido, e visita comum. */
+export async function empresaDoRequest(authorization?: string): Promise<string | null> {
+  if (!authorization?.startsWith('Bearer ')) return null;
+  try {
+    const { verifyEmpresaToken } = await import('../lib/jwt');
+    return verifyEmpresaToken(authorization.split(' ')[1]).clienteId;
+  } catch {
+    return null;
+  }
 }

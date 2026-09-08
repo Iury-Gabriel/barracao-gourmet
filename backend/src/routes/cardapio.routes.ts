@@ -7,6 +7,7 @@ const router = Router();
 router.get('/', cardapioController.listar);
 router.get('/categorias', cardapioController.listarCategorias);
 router.get('/contato', cardapioController.contato);
+router.post('/empresa/login', cardapioController.loginEmpresa);
 router.post('/frete', cardapioController.calcularFrete);
 router.get('/cep/:cep', cardapioController.buscarCep);
 router.get('/cliente', cardapioController.buscarCliente);

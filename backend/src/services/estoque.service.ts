@@ -171,6 +171,8 @@ export async function criarProduto(data: {
   controlaEstoque?: boolean;
   vendavel?: boolean;
   unidade?: string;
+  precoEmpresa?: number | null;
+  exclusivoEmpresa?: boolean;
   preco: number;
   custoMedio?: number;
   custoUltimaCompra?: number;
@@ -214,6 +216,8 @@ export async function atualizarProduto(id: string, data: Partial<{
   controlaEstoque: boolean;
   vendavel: boolean;
   unidade: string;
+  precoEmpresa: number | null;
+  exclusivoEmpresa: boolean;
   preco: number;
   custoMedio: number;
   custoUltimaCompra: number;

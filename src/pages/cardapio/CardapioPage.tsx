@@ -488,6 +488,13 @@ export default function CardapioPage() {
 
   // Agrupa os produtos por categoria. Usa a capa cadastrada da categoria; se nao houver,
   // cai para a imagem do primeiro produto com foto.
+  // O nome da categoria e livre no cadastro, entao procura por aproximacao em
+  // vez de exigir um valor exato.
+  const categoriaBebidas = useMemo(() => {
+    const nomes = Array.from(new Set((produtos as any[]).map((p: any) => p?.categoria).filter(Boolean)));
+    return nomes.find((nome: string) => nome.toLowerCase().includes("bebida")) ?? null;
+  }, [produtos]);
+
   const categoriasComImagem = useMemo(() => {
     const mapa = new Map<string, { nome: string; imagemUrl?: string; total: number }>();
     for (const p of produtos as any[]) {
@@ -1952,7 +1959,22 @@ export default function CardapioPage() {
           <p className="text-sm text-marrom-300">
             Quer avançar para o carrinho ou continuar comprando?
           </p>
-          <DialogFooter className="gap-2">
+          <DialogFooter className="gap-2 sm:flex-col sm:items-stretch sm:space-x-0">
+            {/* Terceira opcao pedida pela casa: a bebida e o que mais escapa do
+                pedido, e depois nao da para incluir sem refazer tudo. So
+                aparece se existir categoria de bebidas cadastrada. */}
+            {categoriaBebidas && (
+              <Button
+                className="bg-blue-600 text-white hover:bg-blue-700"
+                onClick={() => {
+                  setPromptNovoItemOpen(false);
+                  setCategoriaAtiva(categoriaBebidas);
+                  window.scrollTo({ top: 0, behavior: "smooth" });
+                }}
+              >
+                Adicionar bebidas
+              </Button>
+            )}
             <Button variant="outline" className={darkOutlineButtonClass} onClick={() => setPromptNovoItemOpen(false)}>
               Continuar comprando
             </Button>

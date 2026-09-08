@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
-import { verifyToken, JwtPayload } from '../lib/jwt';
+import { verifyToken, JwtPayload, ESCOPO_CARDAPIO_EMPRESA } from '../lib/jwt';
 
 export interface AuthRequest extends Request {
   user?: JwtPayload;
@@ -14,6 +14,11 @@ export function authMiddleware(req: AuthRequest, res: Response, next: NextFuncti
   const token = authHeader.split(' ')[1];
   try {
     const payload = verifyToken(token);
+    // O token do cardapio empresarial e assinado com o mesmo segredo. Sem esta
+    // recusa, a empresa usaria o token dela para entrar no painel inteiro.
+    if ((payload as any)?.escopo === ESCOPO_CARDAPIO_EMPRESA) {
+      return res.status(403).json({ error: 'Este acesso nao vale para o painel.' });
+    }
     req.user = payload;
     next();
   } catch {

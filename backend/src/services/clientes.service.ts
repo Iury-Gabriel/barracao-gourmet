@@ -181,10 +181,21 @@ export async function atualizarCliente(id: string, data: Partial<{
   observacoes: string;
   ativo: boolean;
   entregaGratis: boolean;
+  senha: string;
 }>) {
   const cliente = await prisma.cliente.findUnique({ where: { id } });
   if (!cliente) throw { status: 404, message: 'Cliente não encontrado.' };
-  return prisma.cliente.update({ where: { id }, data });
+
+  // A senha do cardapio empresarial chega em texto e nunca e gravada assim.
+  // Campo vazio deixa a senha atual como esta, em vez de apaga-la.
+  const { senha, ...resto } = data;
+  const dados: any = { ...resto };
+  if (typeof senha === 'string' && senha.trim()) {
+    const bcrypt = (await import('bcryptjs')).default;
+    dados.senhaHash = await bcrypt.hash(senha.trim(), 10);
+  }
+
+  return prisma.cliente.update({ where: { id }, data: dados });
 }
 
 export async function adicionarInteracao(clienteId: string, tipo: string, descricao: string) {

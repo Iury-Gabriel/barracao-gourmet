@@ -6,10 +6,18 @@ export async function listar(req: Request, res: Response, next: NextFunction) {
   try {
     // todos=true retorna todos os produtos (inclusive indisponíveis) para mostrar "esgotado"
     const todos = req.query.todos === 'true';
+    const empresaId = await cardapioService.empresaDoRequest(req.headers.authorization);
     const produtos = todos
       ? await cardapioService.listarTodosProdutosCardapio()
-      : await cardapioService.listarProdutosCardapio();
+      : await cardapioService.listarProdutosCardapio(Boolean(empresaId));
     res.json(produtos);
+  } catch (err) { next(err); }
+}
+
+export async function loginEmpresa(req: Request, res: Response, next: NextFunction) {
+  try {
+    const { email, senha } = req.body || {};
+    res.json(await cardapioService.loginEmpresaCardapio(email, senha));
   } catch (err) { next(err); }
 }
 
@@ -28,8 +36,12 @@ export async function listarCategorias(_req: Request, res: Response, next: NextF
 
 export async function criarPedido(req: Request, res: Response, next: NextFunction) {
   try {
+    // A empresa vem do token, nunca do corpo: senao qualquer um se declararia
+    // empresa e pagaria a tabela do convenio.
+    const empresaId = await cardapioService.empresaDoRequest(req.headers.authorization);
     const pedido = await cardapioService.criarPedidoCardapio({
       ...req.body,
+      empresaId: empresaId ?? undefined,
       ipCliente: req.ip,
     });
     res.status(201).json(pedido);
