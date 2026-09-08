@@ -40,6 +40,13 @@ export async function adicionarInteracao(req: Request, res: Response, next: Next
   } catch (err) { next(err); }
 }
 
+export async function cupomFidelidade(req: Request, res: Response, next: NextFunction) {
+  try {
+    const result = await clientesService.gerarCupomFidelidade(req.params.id);
+    res.status(201).json(result);
+  } catch (err) { next(err); }
+}
+
 export async function kpis(req: Request, res: Response, next: NextFunction) {
   try {
     const result = await clientesService.kpisClientes();

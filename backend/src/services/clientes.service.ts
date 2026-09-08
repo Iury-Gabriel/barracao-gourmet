@@ -61,6 +61,14 @@ export async function listarClientes(filtros: { busca?: string; ativo?: string }
         take: 1,
         select: { criadoEm: true, total: true, status: true },
       },
+      // Ultima reclamacao aberta: a tela de Recorrencia separa quem reclamou
+      // para a equipe reativar esse cliente antes que ele va embora.
+      interacoes: {
+        where: { tipo: 'RECLAMACAO' },
+        orderBy: { criadoEm: 'desc' },
+        take: 1,
+        select: { descricao: true, criadoEm: true },
+      },
     },
     orderBy: { nome: 'asc' },
   });
@@ -77,7 +85,12 @@ export async function listarClientes(filtros: { busca?: string; ativo?: string }
       ultimoPedido,
       diasSemPedido,
       recorrente: c._count.pedidos >= 3,
+      // 10 pedidos e o corte que a casa usa para o agradecimento com cupom.
+      fiel: c._count.pedidos >= 10,
       inativo: diasSemPedido !== null ? diasSemPedido > 30 : c._count.pedidos > 0,
+      reclamacao: c.interacoes[0]
+        ? { descricao: c.interacoes[0].descricao, criadoEm: c.interacoes[0].criadoEm }
+        : null,
     };
   });
 }
@@ -200,4 +213,86 @@ export async function kpisClientes() {
   }).length;
 
   return { total, recorrentes, inativos, novos30dias, ativos: total - inativos };
+}
+
+/**
+ * Cupom de agradecimento para cliente fiel.
+ *
+ * Descobre o prato que ele mais pede e cria um cupom de uso unico com o nome
+ * dele no codigo. O prato vem junto para a mensagem citar o que ele gosta, que
+ * e o que faz a oferta parecer dirigida a ele e nao um disparo generico.
+ */
+export async function gerarCupomFidelidade(clienteId: string) {
+  const cliente = await prisma.cliente.findUnique({
+    where: { id: clienteId },
+    select: { id: true, nome: true, telefone: true, _count: { select: { pedidos: true } } },
+  });
+  if (!cliente) throw { status: 404, message: 'Cliente nao encontrado.' };
+
+  const agregado = await prisma.itemPedido.groupBy({
+    by: ['produtoId'],
+    where: { pedido: { clienteId } },
+    _sum: { quantidade: true },
+    orderBy: { _sum: { quantidade: 'desc' } },
+    take: 1,
+  });
+
+  let produtoFavorito: string | null = null;
+  if (agregado[0]?.produtoId) {
+    const produto = await prisma.produto.findUnique({
+      where: { id: agregado[0].produtoId },
+      select: { nome: true },
+    });
+    produtoFavorito = produto?.nome ?? null;
+  }
+
+  // Codigo curto e ditavel por telefone, com sufixo aleatorio para nao repetir
+  // entre dois clientes de mesmo primeiro nome.
+  const base = (cliente.nome || 'CLIENTE')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^A-Za-z]/g, '')
+    .toUpperCase()
+    .slice(0, 6) || 'CLIENTE';
+
+  let codigo = '';
+  for (let tentativa = 0; tentativa < 10; tentativa++) {
+    const sufixo = Math.floor(1000 + Math.random() * 9000);
+    const candidato = `OBRIGADO${base}${sufixo}`.slice(0, 20);
+    const existe = await prisma.cupom.findUnique({ where: { codigo: candidato } });
+    if (!existe) {
+      codigo = candidato;
+      break;
+    }
+  }
+  if (!codigo) throw { status: 500, message: 'Nao foi possivel gerar um codigo de cupom.' };
+
+  const cupom = await prisma.cupom.create({
+    data: {
+      codigo,
+      tipo: 'PERCENTUAL',
+      valor: 10,
+      ativo: true,
+      // Uso unico: e um agradecimento para aquele cliente, nao uma campanha.
+      limiteUsos: 1,
+      limitePorCliente: 1,
+    },
+  });
+
+  await prisma.interacaoCliente.create({
+    data: {
+      clienteId,
+      tipo: 'REATIVACAO',
+      descricao: `Cupom de fidelidade ${codigo} (10% de desconto) gerado apos ${cliente._count.pedidos} pedidos.`,
+    },
+  });
+
+  return {
+    codigo: cupom.codigo,
+    percentual: cupom.valor,
+    produtoFavorito,
+    totalPedidos: cliente._count.pedidos,
+    nome: cliente.nome,
+    telefone: cliente.telefone,
+  };
 }

@@ -151,6 +151,7 @@ export default function InteracoesClientesPage() {
                 <SelectContent>
                   <SelectItem value="CONTATO">Contato</SelectItem>
                   <SelectItem value="OBSERVACAO">Observação</SelectItem>
+                  <SelectItem value="RECLAMACAO">Reclamação</SelectItem>
                   <SelectItem value="REATIVACAO">Reativação</SelectItem>
                 </SelectContent>
               </Select>

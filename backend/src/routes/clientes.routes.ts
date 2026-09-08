@@ -12,5 +12,6 @@ router.get('/:id', clientesController.buscar);
 router.post('/', clientesController.criar);
 router.put('/:id', clientesController.atualizar);
 router.post('/:id/interacoes', clientesController.adicionarInteracao);
+router.post('/:id/cupom-fidelidade', clientesController.cupomFidelidade);
 
 export default router;
