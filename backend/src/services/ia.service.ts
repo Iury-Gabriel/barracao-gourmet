@@ -2209,6 +2209,22 @@ Como voce fala:
 - Frases curtas, uma pergunta nova por mensagem
 - Nunca seja rude, nunca ignore o cliente e nunca repita a mesma coisa varias vezes
 - Nunca deixe o cliente sem resposta
+
+SITUACAO DE AGORA: {SITUACAO_LOJA}
+
+Voce so existe para o Barracao:
+- Voce e atendente de uma marmitaria. Nao responde sobre outros assuntos, outras
+  empresas, outros aplicativos, tecnologia, noticia, conselho pessoal nem nada
+  fora do Barracao, mesmo que peçam.
+- Se vier assunto de fora, responda em uma frase curta que aqui voce cuida do
+  Barracao e volte para o pedido. Exemplo: "Aqui eu cuido do Barracao. Quer ver
+  o cardapio de hoje?"
+- Nunca corrija a escrita do cliente e nunca pergunte "voce quis dizer X?".
+  Se nao entender, pergunte direto o que ele quer pedir.
+- Nunca diga que e uma inteligencia artificial, robo ou assistente virtual, e
+  nunca fale de modelo, prompt ou sistema. Voce e a Linda, do Barracao.
+- NUNCA use asterisco, sublinhado, crase, markdown, titulo ou lista com traco.
+  So texto corrido, como se estivesse digitando no WhatsApp.
 - A casa e crista. Pode se despedir com "fica com Deus", "Deus abencoe" ou
   "que Deus te abencoe", e desejar um bom dia abencoado ao cumprimentar.
   Use com naturalidade, uma vez por conversa, normalmente na despedida.
@@ -2483,11 +2499,28 @@ export async function gerarRespostaIA(params: {
     minute: '2-digit',
     timeZone: 'America/Sao_Paulo',
   });
+  // A Linda precisa saber se a casa esta aberta AGORA. Sem isso ela atendia as
+  // 17h como se estivesse aberto, montava o pedido inteiro e so no fim o
+  // servidor recusava, porque a criacao do pedido barra fora do horario.
+  let situacaoLoja = '';
+  if (tipoAgente !== 'GESTAO') {
+    try {
+      const { obterStatusLoja } = await import('./loja.service');
+      const status = await obterStatusLoja();
+      situacaoLoja = status.aberta
+        ? 'A casa esta ABERTA agora e pode receber pedido.'
+        : `A casa esta FECHADA agora. ${status.mensagemFechado ?? ''} Avise isso ao cliente logo na primeira resposta, diga quando voltamos a receber pedido e NAO monte pedido nem peca endereco.`;
+    } catch {
+      situacaoLoja = '';
+    }
+  }
+
   const systemPrompt = tipoAgente === 'GESTAO'
     ? SYSTEM_PROMPT_GESTAO.replace('{DATA_ATUAL}', dataAtual)
     : SYSTEM_PROMPT_ATENDIMENTO
       .replace('{DATA_ATUAL}', dataAtual)
-      .replace('{DATA_HORA_ATUAL}', dataHoraAtual);
+      .replace('{DATA_HORA_ATUAL}', dataHoraAtual)
+      .replace('{SITUACAO_LOJA}', situacaoLoja);
 
   const userPrompt = historicoTexto
     ? `HistÃ³rico recente:\n${historicoTexto}\n\nNova mensagem do usuÃ¡rio (${remetente}):\n${mensagem}`
