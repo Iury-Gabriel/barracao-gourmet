@@ -703,7 +703,7 @@ export default function ProdutosPage() {
               )}
             </div>
 
-            <div className="grid gap-3 md:grid-cols-4">
+            <div className={`grid gap-3 ${form.controlaEstoque ? "md:grid-cols-4" : "md:grid-cols-2"}`}>
               <div className="space-y-1">
                 <Label>Preco (R$) *</Label>
                 <Input type="number" step="0.01" value={form.preco} onChange={(e) => setForm((prev) => ({ ...prev, preco: e.target.value }))} />
@@ -718,21 +718,41 @@ export default function ProdutosPage() {
                   placeholder="Quanto custou"
                 />
               </div>
-              <div className="space-y-1">
-                <Label>{form.controlaEstoquePorVariacao ? "Estoque total" : "Estoque"}</Label>
-                <Input
-                  type="number"
-                  value={form.controlaEstoquePorVariacao ? String(estoqueTotalVariacoes) : form.estoque}
-                  onChange={(e) => setForm((prev) => ({ ...prev, estoque: e.target.value }))}
-                  readOnly={form.controlaEstoquePorVariacao}
-                  className={form.controlaEstoquePorVariacao ? "bg-muted/50 font-semibold" : undefined}
-                />
-              </div>
-              <div className="space-y-1">
-                <Label>Minimo</Label>
-                <Input type="number" value={form.estoqueMinimo} onChange={(e) => setForm((prev) => ({ ...prev, estoqueMinimo: e.target.value }))} />
-              </div>
+              {form.controlaEstoque && (
+                <>
+                  <div className="space-y-1">
+                    <Label>
+                      {form.controlaEstoquePorVariacao ? "Estoque total" : "Estoque"}
+                      {form.unidade === "KG" ? " (kg)" : ""}
+                    </Label>
+                    <Input
+                      type="number"
+                      step={form.unidade === "KG" ? "0.001" : "1"}
+                      value={form.controlaEstoquePorVariacao ? String(estoqueTotalVariacoes) : form.estoque}
+                      onChange={(e) => setForm((prev) => ({ ...prev, estoque: e.target.value }))}
+                      readOnly={form.controlaEstoquePorVariacao}
+                      className={form.controlaEstoquePorVariacao ? "bg-muted/50 font-semibold" : undefined}
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <Label>Minimo</Label>
+                    <Input
+                      type="number"
+                      step={form.unidade === "KG" ? "0.001" : "1"}
+                      value={form.estoqueMinimo}
+                      onChange={(e) => setForm((prev) => ({ ...prev, estoqueMinimo: e.target.value }))}
+                    />
+                  </div>
+                </>
+              )}
             </div>
+
+            {!form.controlaEstoque && (
+              <p className="rounded-lg border border-dashed p-3 text-xs text-muted-foreground">
+                Este item nao controla estoque: nao pede quantidade, nunca fica esgotado e nao
+                aparece nos alertas de reposicao. E o certo para prato feito na hora.
+              </p>
+            )}
 
             <div className="flex items-center gap-3 rounded-lg border p-3">
               <Switch
