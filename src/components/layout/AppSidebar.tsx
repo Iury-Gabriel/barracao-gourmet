@@ -8,6 +8,7 @@ import {
   CalendarDays,
   Store,
   Bike,
+  Ticket,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -59,6 +60,7 @@ const gestaoItems: NavItem[] = [
   { to: "/gestao/financeira",   label: "Financeiro",          icon: DollarSign,     permission: "aba_gestao_financeira" },
   { to: "/gestao/projecao",     label: "Projeção",            icon: TrendingUp,     permission: "aba_gestao_projecao" },
   { to: "/gestao/kpis",         label: "KPIs de Gestão",      icon: BarChart3,      permission: "aba_gestao_dashboard" },
+  { to: "/cupons",              label: "Cupons",              icon: Ticket,         permission: "aba_gestao_configuracoes" },
   // Configuracoes tambem tem a engrenagem no rodape, mas o rodape e facil de nao
   // achar. Aqui aparece como item normal, no modulo em que a rota ja era
   // classificada pelo resolvedModuleId.

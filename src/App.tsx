@@ -52,6 +52,7 @@ import AutomacoesPage from "./pages/AutomacoesPage";
 import ConfiguracoesPage from "./pages/ConfiguracoesPage";
 import ProjecaoGestaoPage from "./pages/gestao/ProjecaoGestaoPage";
 import KpisGestaoPage from "./pages/gestao/KpisGestaoPage";
+import CuponsPage from "./pages/cupons/CuponsPage";
 
 // WhatsApp
 import AtendimentosPage from "./pages/whatsapp/AtendimentosPage";
@@ -130,6 +131,7 @@ const App = () => (
                   <Route path="/custos" element={<Navigate to="/gestao/financeira" replace />} />
                   <Route path="/custos/produtos" element={<Navigate to="/gestao/financeira?aba=custos-produto" replace />} />
                   <Route path="/custos/lancamentos" element={<Navigate to="/gestao/financeira?aba=custos-operacional" replace />} />
+                  <Route path="/cupons" element={<ProtectedRoute permission="aba_gestao_configuracoes"><CuponsPage /></ProtectedRoute>} />
                   <Route path="/automacoes" element={<ProtectedRoute permission="aba_gestao_automacoes"><AutomacoesPage /></ProtectedRoute>} />
                   <Route path="/configuracoes" element={<ProtectedRoute permission="aba_gestao_configuracoes"><ConfiguracoesPage /></ProtectedRoute>} />
 
