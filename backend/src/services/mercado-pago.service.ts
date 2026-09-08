@@ -684,3 +684,52 @@ export async function gerarQrCodePix(input: {
 
   return { qrCodeImageUrl };
 }
+
+/**
+ * Estorna um pagamento no Mercado Pago.
+ *
+ * Sem valor, devolve tudo; com valor, faz estorno parcial. O Mercado Pago so
+ * aceita estorno de pagamento aprovado e dentro do prazo dele, entao a falha
+ * aqui e esperada e precisa chegar legivel na tela: quando nao da para estornar
+ * pelo sistema, alguem vai ter que fazer pelo painel deles.
+ */
+export async function estornarPagamentoMercadoPago(paymentId: string, valor?: number) {
+  if (!config.mercadoPagoAccessToken) {
+    throw {
+      status: 500,
+      message: 'Integracao Mercado Pago nao configurada. Defina MERCADO_PAGO_ACCESS_TOKEN.',
+    };
+  }
+
+  const body = valor && valor > 0 ? JSON.stringify({ amount: Number(valor.toFixed(2)) }) : undefined;
+
+  const response = await fetch(`${config.mercadoPagoApiBaseUrl}/v1/payments/${paymentId}/refunds`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${config.mercadoPagoAccessToken}`,
+      // Evita estornar duas vezes se a tela for clicada de novo ou a rede cair
+      // no meio: a mesma chave devolve o mesmo estorno em vez de criar outro.
+      'X-Idempotency-Key': `refund-${paymentId}-${valor ? valor.toFixed(2) : 'total'}`,
+    },
+    ...(body ? { body } : {}),
+  });
+
+  const rawText = await response.text();
+  const json = parseJsonSafe(rawText);
+
+  if (!response.ok) {
+    throw montarErroMercadoPago(
+      `Falha ao estornar no Mercado Pago: status ${response.status}.`,
+      json,
+      { endpoint: `/v1/payments/${paymentId}/refunds`, paymentId },
+    );
+  }
+
+  return {
+    id: String(json?.id || ''),
+    status: String(json?.status || ''),
+    valor: Number(json?.amount ?? valor ?? 0),
+    rawResponse: json,
+  };
+}

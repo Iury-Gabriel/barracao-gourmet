@@ -1039,3 +1039,24 @@ export async function buscarPedidoCardapio(pedidoId: string) {
 export async function confirmarPagamento(pedidoId: string, metodoPagamento: string) {
   return marcarPedidoComoPago(pedidoId, metodoPagamento, 'confirmacao manual do cardapio');
 }
+
+/**
+ * Telefone publico da casa, tirado da instancia de WhatsApp conectada.
+ *
+ * E o mesmo numero em que a Linda atende, entao o convenio para empresas cai
+ * na conversa que ja existe em vez de abrir um canal novo. Prioriza a
+ * instancia de ATENDIMENTO; a de GESTAO e o numero interno da equipe.
+ */
+export async function contatoPublicoCardapio() {
+  const atendimento = await prisma.instanciaWhatsApp.findFirst({
+    where: { status: 'CONECTADO', tipo: 'ATENDIMENTO', telefone: { not: null } },
+    select: { telefone: true },
+  });
+  const qualquer =
+    atendimento ??
+    (await prisma.instanciaWhatsApp.findFirst({
+      where: { status: 'CONECTADO', telefone: { not: null } },
+      select: { telefone: true },
+    }));
+  return { whatsapp: qualquer?.telefone ?? null };
+}

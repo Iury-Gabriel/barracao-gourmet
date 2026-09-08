@@ -68,6 +68,19 @@ export default function PedidoDetailPage() {
     onError: (err: any) => toast.error(err.message),
   });
 
+  // O Mercado Pago recusa estorno fora do prazo ou de pagamento nao aprovado.
+  // Quando recusa, a mensagem dele aparece na tela e fica no historico do
+  // pedido, porque ai o estorno tem que ser feito pelo painel deles.
+  const estornar = useMutation({
+    mutationFn: () => api.post<any>(`/api/pedidos/${id}/estornar`, {}),
+    onSuccess: (dados: any) => {
+      queryClient.invalidateQueries({ queryKey: ["pedido", id] });
+      queryClient.invalidateQueries({ queryKey: ["pedidos"] });
+      toast.success(`Estorno de ${fmt(dados.valor)} enviado ao Mercado Pago.`);
+    },
+    onError: (err: any) => toast.error(err.message, { duration: 8000 }),
+  });
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -226,6 +239,19 @@ export default function PedidoDetailPage() {
                 Confirmar
               </Button>
             </div>
+            {pedido.mercadoPagoPaymentId && pedido.statusPagamento === "PAGO" && (
+              <Button
+                variant="outline"
+                disabled={estornar.isPending}
+                onClick={() => {
+                  if (confirm(`Estornar ${fmt(pedido.total)} para o cliente no Mercado Pago?`)) {
+                    estornar.mutate();
+                  }
+                }}
+              >
+                {estornar.isPending ? "Estornando..." : "Estornar no Mercado Pago"}
+              </Button>
+            )}
             <Button
               variant="destructive"
               disabled={cancelar.isPending}

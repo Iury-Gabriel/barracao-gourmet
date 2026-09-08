@@ -60,6 +60,14 @@ export async function atualizarPagamento(req: Request, res: Response, next: Next
   } catch (err) { next(err); }
 }
 
+export async function estornar(req: Request, res: Response, next: NextFunction) {
+  try {
+    const valor = req.body?.valor !== undefined ? Number(req.body.valor) : undefined;
+    const result = await pedidosService.estornarPagamentoPedido(req.params.id, valor);
+    res.json(result);
+  } catch (err) { next(err); }
+}
+
 export async function cancelar(req: Request, res: Response, next: NextFunction) {
   try {
     const pedido = await pedidosService.cancelarPedido(req.params.id);

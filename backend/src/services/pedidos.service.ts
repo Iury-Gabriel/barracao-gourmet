@@ -872,3 +872,69 @@ export async function kpisPedidos(dataInicio?: string, dataFim?: string) {
   };
 }
 
+
+/**
+ * Estorna o pagamento online do pedido.
+ *
+ * Vale so para pedido pago pelo Mercado Pago: dinheiro e maquininha se
+ * resolvem no balcao. Quando o Mercado Pago recusa (fora do prazo, pagamento
+ * nao aprovado, saldo insuficiente), o motivo volta em texto para a tela e
+ * fica registrado no historico do pedido, porque nesse caso alguem vai ter que
+ * estornar pelo painel deles.
+ */
+export async function estornarPagamentoPedido(pedidoId: string, valor?: number) {
+  const pedido = await prisma.pedido.findUnique({
+    where: { id: pedidoId },
+    select: {
+      id: true,
+      numero: true,
+      total: true,
+      statusPagamento: true,
+      mercadoPagoPaymentId: true,
+    },
+  });
+  if (!pedido) throw { status: 404, message: 'Pedido nao encontrado.' };
+
+  if (!pedido.mercadoPagoPaymentId) {
+    throw {
+      status: 400,
+      message:
+        'Este pedido nao foi pago pelo Mercado Pago. Devolucao em dinheiro ou maquininha e feita no balcao.',
+    };
+  }
+
+  const { estornarPagamentoMercadoPago } = await import('./mercado-pago.service');
+
+  try {
+    const estorno = await estornarPagamentoMercadoPago(pedido.mercadoPagoPaymentId, valor);
+
+    await prisma.$transaction([
+      prisma.pedido.update({
+        where: { id: pedidoId },
+        data: { statusPagamento: 'CANCELADO', mercadoPagoStatus: 'refunded' },
+      }),
+      prisma.historicoPedido.create({
+        data: {
+          pedidoId,
+          status: 'ESTORNADO',
+          obs: `Estorno de R$ ${(estorno.valor || pedido.total).toFixed(2)} feito no Mercado Pago (${estorno.status}).`,
+        },
+      }),
+    ]);
+
+    return { sucesso: true, valor: estorno.valor || pedido.total, status: estorno.status };
+  } catch (error: any) {
+    const motivo = error?.message || 'O Mercado Pago recusou o estorno.';
+    await prisma.historicoPedido.create({
+      data: {
+        pedidoId,
+        status: 'ESTORNO_FALHOU',
+        obs: `Estorno automatico nao foi aceito: ${motivo} Estornar pelo painel do Mercado Pago.`,
+      },
+    });
+    throw {
+      status: 400,
+      message: `${motivo} Faca o estorno pelo painel do Mercado Pago.`,
+    };
+  }
+}

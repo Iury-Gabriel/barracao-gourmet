@@ -6,6 +6,7 @@ const router = Router();
 // Rotas públicas — sem autenticação
 router.get('/', cardapioController.listar);
 router.get('/categorias', cardapioController.listarCategorias);
+router.get('/contato', cardapioController.contato);
 router.post('/frete', cardapioController.calcularFrete);
 router.get('/cep/:cep', cardapioController.buscarCep);
 router.get('/cliente', cardapioController.buscarCliente);

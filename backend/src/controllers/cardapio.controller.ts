@@ -13,6 +13,12 @@ export async function listar(req: Request, res: Response, next: NextFunction) {
   } catch (err) { next(err); }
 }
 
+export async function contato(req: Request, res: Response, next: NextFunction) {
+  try {
+    res.json(await cardapioService.contatoPublicoCardapio());
+  } catch (err) { next(err); }
+}
+
 export async function listarCategorias(_req: Request, res: Response, next: NextFunction) {
   try {
     const categorias = await cardapioService.listarCategoriasCardapio();

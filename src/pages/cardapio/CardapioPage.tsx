@@ -16,8 +16,7 @@ import { CardFormMercadoPago, type CartaoTokenizado } from "./CardFormMercadoPag
 import { tokenizarCartaoSalvo } from "@/lib/mercadopago";
 import {
   UtensilsCrossed, ShoppingCart, Plus, Minus, Trash2, CheckCircle,
-  CreditCard, QrCode, Copy, Clock, Truck, ArrowRight, ArrowLeft, MessageCircle, ClipboardList,
-} from "lucide-react";
+  CreditCard, QrCode, Copy, Clock, Truck, ArrowRight, ArrowLeft, MessageCircle, ClipboardList, Building2 } from "lucide-react";
 import { toast } from "sonner";
 
 interface ItemCarrinho {
@@ -448,6 +447,27 @@ export default function CardapioPage() {
     enabled: !!pedidoConfirmado?.id,
     refetchInterval: 10000,
   });
+
+  // Numero em que a Linda atende, usado no convenio para empresas.
+  const { data: contatoLoja } = useQuery({
+    queryKey: ["cardapio-contato"],
+    queryFn: async () => {
+      const res = await fetch(`${API_URL}/api/cardapio/contato`);
+      return res.json();
+    },
+  });
+
+  // Convenio nao e pedido de balcao: envolve quantidade fixa por dia, dias da
+  // semana e condicao comercial, entao vai para a conversa no WhatsApp.
+  const linkConvenio = useMemo(() => {
+    const limpo = String(contatoLoja?.whatsapp || "").replace(/\D/g, "");
+    if (limpo.length < 10) return null;
+    const numero = limpo.startsWith("55") ? limpo : "55" + limpo;
+    const texto =
+      "Ola! Quero saber sobre convenio de marmitas para a minha empresa. " +
+      "Somos a empresa: ";
+    return `https://wa.me/${numero}?text=${encodeURIComponent(texto)}`;
+  }, [contatoLoja]);
 
   // Capas cadastradas por categoria (definidas no admin). Tem prioridade sobre a foto do produto.
   const { data: categoriasCapas = [] } = useQuery({
@@ -1080,6 +1100,18 @@ export default function CardapioPage() {
             </div>
           </div>
           <div className="flex items-center gap-2">
+          {linkConvenio && (
+            <a
+              href={linkConvenio}
+              target="_blank"
+              rel="noreferrer"
+              className="hidden items-center gap-2 rounded-xl border border-white/15 bg-white/10 px-3 py-2 text-sm font-medium text-white transition hover:bg-white/20 sm:flex"
+              title="Marmitas para a sua empresa"
+            >
+              <Building2 className="h-5 w-5" />
+              <span>Para empresas</span>
+            </a>
+          )}
           <button
             onClick={() => setMeusPedidosOpen(true)}
             className="flex items-center gap-2 rounded-xl border border-white/15 bg-white/10 px-3 py-2 text-sm font-medium text-white transition-colors hover:bg-white/20"
