@@ -62,6 +62,8 @@ model Produto {
   // Insumo (arroz, embalagem, gas) existe no estoque mas nao e vendido: com
   // false o item some do cardapio e continua no controle de estoque.
   vendavel       Boolean  @default(true)
+  // Marmita em promocao: o cardapio pinta o preco de amarelo para destacar.
+  promocional    Boolean  @default(false)
   // Preco praticado no cardapio empresarial. Null = mesmo preco do varejo.
   precoEmpresa   Float?
   // Item que so aparece para empresa logada (ex: marmita em quantidade fechada).

@@ -410,6 +410,7 @@ export async function listarProdutosCardapio(empresaLogada = false) {
         preco: true,
         precoEmpresa: true,
         exclusivoEmpresa: true,
+        promocional: true,
         imagemUrl: true,
         disponivel: true,
         estoque: true,
@@ -464,6 +465,7 @@ export async function listarTodosProdutosCardapio(empresaLogada = false) {
         preco: true,
         precoEmpresa: true,
         exclusivoEmpresa: true,
+        promocional: true,
         imagemUrl: true,
         disponivel: true,
         estoque: true,
@@ -555,6 +557,7 @@ export async function criarPedidoCardapio(data: {
         preco: true,
         precoEmpresa: true,
         exclusivoEmpresa: true,
+        promocional: true,
         estoque: true,
         disponivel: true,
         variacoes: {

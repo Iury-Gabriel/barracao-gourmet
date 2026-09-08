@@ -44,7 +44,7 @@ interface FreteInfo {
 }
 
 type FormaPagamento = "PIX" | "CARTAO_CREDITO" | "CARTAO_DEBITO" | "DINHEIRO" | "PAGAR_NA_ENTREGA";
-type PagamentoEntrega = "CARTAO_CREDITO" | "DINHEIRO";
+type PagamentoEntrega = "CARTAO_CREDITO" | "CARTAO_DEBITO" | "DINHEIRO" | "VALE";
 type ImageTone = "light" | "dark";
 
 const darkInputClass = "border-marrom-700 bg-marrom-900 text-white placeholder:text-marrom-500 focus-visible:ring-marrom-500";
@@ -84,6 +84,7 @@ const PAGAMENTO_LABEL: Record<string, string> = {
   CARTAO_DEBITO: "Cartão débito",
   DINHEIRO: "Dinheiro",
   PAGAR_NA_ENTREGA: "Pagar na entrega",
+  VALE: "Vale refeição",
 };
 
 const STATUS_BADGE: Record<string, string> = {
@@ -1428,17 +1429,26 @@ export default function CardapioPage() {
                         <Truck className={`h-4 w-4 ${formaPagamento === "PAGAR_NA_ENTREGA" ? "text-primary" : "text-marrom-300"}`} />
                         <span className={`font-medium ${formaPagamento === "PAGAR_NA_ENTREGA" ? "text-primary" : ""}`}>Pagar na entrega</span>
                       </div>
-                      <p className="text-xs text-marrom-300 mt-1">Escolha cartão ou dinheiro para o pagamento na entrega.</p>
+                      <p className="text-xs text-marrom-300 mt-1">Dinheiro, cartão de crédito ou débito, ou vale refeição.</p>
                     </button>
 
                     {formaPagamento === "PAGAR_NA_ENTREGA" && (
                       <div className="grid grid-cols-2 gap-2">
-                        <Button type="button" variant={pagamentoEntrega === "CARTAO_CREDITO" ? "default" : "outline"} onClick={() => setPagamentoEntrega("CARTAO_CREDITO")}>
-                          Cartão
-                        </Button>
-                        <Button type="button" variant={pagamentoEntrega === "DINHEIRO" ? "default" : "outline"} onClick={() => setPagamentoEntrega("DINHEIRO")}>
-                          Dinheiro
-                        </Button>
+                        {([
+                          { value: "DINHEIRO", label: "Dinheiro" },
+                          { value: "CARTAO_CREDITO", label: "Cartão crédito" },
+                          { value: "CARTAO_DEBITO", label: "Cartão débito" },
+                          { value: "VALE", label: "Vale refeição" },
+                        ] as const).map((m) => (
+                          <Button
+                            key={m.value}
+                            type="button"
+                            variant={pagamentoEntrega === m.value ? "default" : "outline"}
+                            onClick={() => setPagamentoEntrega(m.value)}
+                          >
+                            {m.label}
+                          </Button>
+                        ))}
                       </div>
                     )}
 
@@ -1926,7 +1936,20 @@ export default function CardapioPage() {
                       )}
                     </div>
                     <div className="flex items-center justify-between">
-                      <span className="font-bold text-primary text-base">{fmt(produto.preco)}</span>
+                      {/* Amarelo marca a marmita em promocao; branco e o preco
+                          normal. O valor cobrado e o mesmo, muda so o destaque. */}
+                      <span
+                        className={`text-base font-bold ${
+                          produto.promocional ? "text-amber-400" : "text-white"
+                        }`}
+                      >
+                        {fmt(produto.preco)}
+                        {produto.promocional && (
+                          <span className="ml-2 rounded bg-amber-400/20 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-amber-300">
+                            Promo
+                          </span>
+                        )}
+                      </span>
                       {esgotado ? (
                         <Badge variant="outline" className="border-marrom-600 text-xs text-marrom-300">Indisponível</Badge>
                       ) : temVariacoes ? (

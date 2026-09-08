@@ -53,6 +53,7 @@ type ProdutoForm = {
   vendavel: boolean;
   precoEmpresa: string;
   exclusivoEmpresa: boolean;
+  promocional: boolean;
   disponivel: boolean;
   diasSemana: number[];
   imagemUrl: string;
@@ -96,6 +97,7 @@ const createEmptyForm = (): ProdutoForm => ({
   vendavel: true,
   precoEmpresa: "",
   exclusivoEmpresa: false,
+  promocional: false,
   disponivel: true,
   diasSemana: [],
   imagemUrl: "",
@@ -203,6 +205,7 @@ export default function ProdutosPage() {
       unidade: produto.unidade ?? "UN",
       precoEmpresa: produto.precoEmpresa != null ? String(produto.precoEmpresa) : "",
       exclusivoEmpresa: Boolean(produto.exclusivoEmpresa),
+      promocional: Boolean(produto.promocional),
       controlaEstoque: produto.controlaEstoque !== false,
       vendavel: produto.vendavel !== false,
       disponivel: Boolean(produto.disponivel),
@@ -298,6 +301,7 @@ export default function ProdutosPage() {
       // Vazio = empresa paga o mesmo preco. Zero seria "de graca".
       precoEmpresa: form.precoEmpresa.trim() ? Number(form.precoEmpresa) : null,
       exclusivoEmpresa: form.exclusivoEmpresa,
+      promocional: form.promocional,
       variacoes: form.variacoes
         .map((variacao) => ({
           nome: variacao.nome.trim(),
@@ -727,6 +731,19 @@ export default function ProdutosPage() {
               <div className="space-y-1">
                 <Label>Minimo</Label>
                 <Input type="number" value={form.estoqueMinimo} onChange={(e) => setForm((prev) => ({ ...prev, estoqueMinimo: e.target.value }))} />
+              </div>
+            </div>
+
+            <div className="flex items-center gap-3 rounded-lg border p-3">
+              <Switch
+                checked={form.promocional}
+                onCheckedChange={(value) => setForm((prev) => ({ ...prev, promocional: value }))}
+              />
+              <div>
+                <Label>Marmita em promocao</Label>
+                <p className="text-xs text-muted-foreground">
+                  Mostra o preco em amarelo no cardapio. Nao muda o valor cobrado.
+                </p>
               </div>
             </div>
 

@@ -19,6 +19,7 @@ const PAGAMENTO_LABEL: Record<string, string> = {
   DINHEIRO: "Dinheiro",
   PAGAR_NA_ENTREGA: "Pagar na entrega",
   PENDENTE: "Pendente",
+  VALE: "Vale refeicao",
 };
 
 function escapeHtml(s: string) {
