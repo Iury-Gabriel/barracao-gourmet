@@ -69,7 +69,11 @@ function mensagemPedeCatalogoOuDisponibilidade(mensagem: string) {
   const texto = normalizarBuscaTexto(mensagem);
   if (!texto) return false;
 
-  return /(^tem\s+[a-z0-9]|o que tem|quais.*tem|quais sao|tem pra|tem de|tem ai|mostra|lista|catalogo|cardapio|disponivel|disponiveis|estoque|preco de|valor de|quanto custa|quanto ta)/i.test(texto);
+  // Este atalho responde o cardapio sem passar pelo modelo, entao o que nao cai
+  // aqui vira resposta generica ("o que voce gostaria de pedir?") ou promessa
+  // vazia ("vou consultar"). Duas formas comuns ficavam de fora e apareceram em
+  // conversa real: "quais as opcoes" e "oq tem hj".
+  return /(^tem\s+[a-z0-9]|o que tem|o que voces tem|oq tem|q tem|tem o que|quais.*tem|quais sao|quais as opcoes|quais opcoes|que opcoes|opcoes de|tem pra|tem de|tem ai|mostra|lista|catalogo|cardapio|menu|prato do dia|almoco de hoje|marmita de hoje|disponivel|disponiveis|estoque|preco de|valor de|quanto custa|quanto ta)/i.test(texto);
 }
 
 function mensagemPedeLinkCardapio(mensagem: string) {
@@ -536,6 +540,7 @@ async function responderCatalogoSemAlucinacao(mensagem: string) {
       descricao: true,
       tipoVariacao: true,
       controlaEstoquePorVariacao: true,
+      controlaEstoque: true,
       diasSemana: true,
       preco: true,
       estoque: true,
@@ -557,7 +562,13 @@ async function responderCatalogoSemAlucinacao(mensagem: string) {
   // os 31 pratos numa sexta, incluindo feijoada, que so sai quarta e sabado.
   const produtosDisponiveis = produtos
     .map((produto) => mapearProdutoComEstoqueCalculado(produto, { ocultarVariacoesSemEstoque: true, recalcularDisponibilidade: true }))
-    .filter((produto) => produto.disponivel && produto.estoque > 0)
+    // Prato feito na hora tem estoque zero de proposito. Cobrar saldo dele aqui
+    // sumia justamente com as marmitas do dia, que sao o carro-chefe.
+    .filter(
+      (produto) =>
+        produto.disponivel &&
+        ((produto as any).controlaEstoque === false || produto.estoque > 0),
+    )
     .filter((produto) => saiHoje((produto as any).diasSemana));
 
   if (!produtosDisponiveis.length) {
@@ -2159,6 +2170,23 @@ Regras:
 const SYSTEM_PROMPT_ATENDIMENTO = `Voce e a Linda, atendente do Barracao no WhatsApp.
 Objetivo: atender rapido e com gentileza, ajudar o cliente a escolher, fechar o pedido e conduzir ate o pagamento.
 
+=========================================
+AS 4 REGRAS QUE VALEM MAIS QUE TUDO ABAIXO
+=========================================
+1. NUNCA escreva asterisco, sublinhado, crase, markdown, titulo ou lista com
+   traco. So texto corrido. No WhatsApp asterisco vira negrito torto.
+2. NUNCA diga que vai fazer algo e pare. Nada de "vou consultar", "vou
+   verificar", "ja te falo", "um momento". Se precisa de dado, chame a tool
+   AGORA e responda com o resultado na MESMA mensagem.
+3. Se o cliente perguntar o que tem hoje, quais as opcoes, o cardapio ou algo
+   parecido, chame consultar_catalogo_produtos e LISTE os pratos com preco.
+   Nunca devolva a pergunta para o cliente sem antes mostrar o cardapio.
+4. Voce so trata do Barracao. Assunto de fora, uma frase e volte ao pedido.
+   Nunca corrija a escrita do cliente, nunca pergunte "voce quis dizer X" e
+   nunca diga que e IA, robo ou assistente virtual.
+=========================================
+
+
 Dados oficiais da operacao:
 - Nome: Barracao
 - Endereco: R. Olga Genioli Leite, 50 - Jurubatuba, Sao Paulo - SP, 04675-130
@@ -2212,19 +2240,7 @@ Como voce fala:
 
 SITUACAO DE AGORA: {SITUACAO_LOJA}
 
-Voce so existe para o Barracao:
-- Voce e atendente de uma marmitaria. Nao responde sobre outros assuntos, outras
-  empresas, outros aplicativos, tecnologia, noticia, conselho pessoal nem nada
-  fora do Barracao, mesmo que peçam.
-- Se vier assunto de fora, responda em uma frase curta que aqui voce cuida do
-  Barracao e volte para o pedido. Exemplo: "Aqui eu cuido do Barracao. Quer ver
-  o cardapio de hoje?"
-- Nunca corrija a escrita do cliente e nunca pergunte "voce quis dizer X?".
-  Se nao entender, pergunte direto o que ele quer pedir.
-- Nunca diga que e uma inteligencia artificial, robo ou assistente virtual, e
-  nunca fale de modelo, prompt ou sistema. Voce e a Linda, do Barracao.
-- NUNCA use asterisco, sublinhado, crase, markdown, titulo ou lista com traco.
-  So texto corrido, como se estivesse digitando no WhatsApp.
+Exemplo do assunto de fora: "Aqui eu cuido do Barracao. Quer ver o cardapio de hoje?" 
 - A casa e crista. Pode se despedir com "fica com Deus", "Deus abencoe" ou
   "que Deus te abencoe", e desejar um bom dia abencoado ao cumprimentar.
   Use com naturalidade, uma vez por conversa, normalmente na despedida.
@@ -2410,6 +2426,27 @@ export async function gerarRespostaIA(params: {
 }) {
   const { mensagem, remetente, tipoAgente, instanciaId } = params;
   console.log('[ia] gerarRespostaIA.start', { tipoAgente, instanciaId, remetente, mensagemPreview: String(mensagem).slice(0, 120) });
+
+  // Loja fechada e sim ou nao, nao e julgamento: responder por codigo tira a
+  // decisao do modelo. Com o aviso so no prompt, ele ignorava e seguia
+  // oferecendo cardapio as 18h30, com a casa fechada desde as 15h.
+  if (tipoAgente === 'ATENDIMENTO') {
+    try {
+      const { obterStatusLoja } = await import('./loja.service');
+      const status = await obterStatusLoja();
+      if (!status.aberta) {
+        console.log('[ia] resposta_direta_loja_fechada', { remetente, instanciaId });
+        return {
+          text:
+            `Oi! Aqui e a Linda, do Barracao. ${status.mensagemFechado ?? 'No momento estamos fechados.'} ` +
+            'Quando abrirmos eu te ajudo com o pedido. Fica com Deus!',
+          usedFallback: false,
+        };
+      }
+    } catch {
+      // Falha ao ler a configuracao nao pode calar o atendimento: segue o fluxo.
+    }
+  }
 
   if (tipoAgente === 'ATENDIMENTO') {
     const respostaPedidoCardapio = await responderConfirmacaoPedidoCardapio(mensagem);
