@@ -1090,6 +1090,61 @@ function LojaTab() {
             />
           </div>
 
+          {/* Antes so existia o botao manual acima. Se ninguem lembrasse de
+              apertar, o cardapio aceitava pedido de madrugada e no domingo. */}
+          <div className="space-y-3 rounded-lg border p-3">
+            <div>
+              <p className="text-sm font-medium">Horário de funcionamento</p>
+              <p className="text-xs text-muted-foreground">
+                Fora dessa janela o cardápio fecha sozinho, sem precisar do botão acima.
+              </p>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1">
+                <Label>Abre às</Label>
+                <Input
+                  type="time"
+                  defaultValue={configLoja?.horaAbertura ?? "09:00"}
+                  onBlur={(e) => salvar.mutate({ horaAbertura: e.target.value })}
+                />
+              </div>
+              <div className="space-y-1">
+                <Label>Fecha às</Label>
+                <Input
+                  type="time"
+                  defaultValue={configLoja?.horaFechamento ?? "15:00"}
+                  onBlur={(e) => salvar.mutate({ horaFechamento: e.target.value })}
+                />
+              </div>
+            </div>
+
+            <div className="space-y-1">
+              <Label>Dias que abre</Label>
+              <div className="flex flex-wrap gap-1.5">
+                {["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"].map((rotulo, dia) => {
+                  const dias: number[] = configLoja?.diasFuncionamento ?? [1, 2, 3, 4, 5, 6];
+                  const ativo = dias.includes(dia);
+                  return (
+                    <Button
+                      key={dia}
+                      type="button"
+                      size="sm"
+                      variant={ativo ? "default" : "outline"}
+                      onClick={() =>
+                        salvar.mutate({
+                          diasFuncionamento: ativo ? dias.filter((d) => d !== dia) : [...dias, dia],
+                        })
+                      }
+                    >
+                      {rotulo}
+                    </Button>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+
           <div className="space-y-2">
             <Label>Mensagem exibida ao cliente (opcional)</Label>
             <Textarea

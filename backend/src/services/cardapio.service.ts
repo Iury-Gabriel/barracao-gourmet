@@ -29,7 +29,7 @@ import {
 } from './mercado-pago.service';
 import { marcarPedidoComoPago, obterContatoWhatsAppAtendimento } from './pedidos.service';
 import { clienteTemEntregaGratis } from './clientes.service';
-import { obterConfiguracaoLoja } from './loja.service';
+import { obterConfiguracaoLoja, obterStatusLoja } from './loja.service';
 import { validarCupom, registrarUsoCupom } from './cupons.service';
 
 // Remove espacos (inclusive internos) do e-mail. Corretores de teclado no celular
@@ -536,7 +536,9 @@ export async function criarPedidoCardapio(data: {
   data.emailCliente = sanitizeEmail(data.emailCliente);
   data.cartaoEmail = sanitizeEmail(data.cartaoEmail);
 
-  const configLoja = await obterConfiguracaoLoja();
+  // Barra fora do horario tambem, nao so no fechamento manual: sem isso entrava
+  // pedido de madrugada e no domingo, que a casa nao tem como cumprir.
+  const configLoja = await obterStatusLoja();
   if (configLoja.lojaFechada) {
     throw { status: 400, message: configLoja.mensagemFechado || 'A loja está fechada no momento. Tente novamente mais tarde.' };
   }

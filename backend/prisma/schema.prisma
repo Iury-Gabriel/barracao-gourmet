@@ -293,8 +293,16 @@ model ConfiguracaoIA {
 
 model ConfiguracaoLoja {
   id              String   @id @default(uuid())
+  // Fechamento manual, para imprevisto (falta de gas, feriado). Vale por cima
+  // do horario abaixo.
   lojaFechada     Boolean  @default(false)
   mensagemFechado String?
+  // Janela em que a casa aceita pedido, no fuso de Sao Paulo. A cozinha abre
+  // as 8h e as entregas comecam as 11h, mas o pedido entra a partir das 9h.
+  horaAbertura    String   @default("09:00")
+  horaFechamento  String   @default("15:00")
+  // 0=domingo .. 6=sabado. A casa abre de segunda a sabado.
+  diasFuncionamento Int[]  @default([1, 2, 3, 4, 5, 6])
   criadoEm        DateTime @default(now())
   atualizadoEm    DateTime @updatedAt
 
