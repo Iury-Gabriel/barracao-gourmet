@@ -8,7 +8,7 @@ export async function listar(req: Request, res: Response, next: NextFunction) {
     const todos = req.query.todos === 'true';
     const empresaId = await cardapioService.empresaDoRequest(req.headers.authorization);
     const produtos = todos
-      ? await cardapioService.listarTodosProdutosCardapio()
+      ? await cardapioService.listarTodosProdutosCardapio(Boolean(empresaId))
       : await cardapioService.listarProdutosCardapio(Boolean(empresaId));
     res.json(produtos);
   } catch (err) { next(err); }

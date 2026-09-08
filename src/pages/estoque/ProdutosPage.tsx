@@ -51,6 +51,8 @@ type ProdutoForm = {
   unidade: string;
   controlaEstoque: boolean;
   vendavel: boolean;
+  precoEmpresa: string;
+  exclusivoEmpresa: boolean;
   disponivel: boolean;
   diasSemana: number[];
   imagemUrl: string;
@@ -92,6 +94,8 @@ const createEmptyForm = (): ProdutoForm => ({
   unidade: "UN",
   controlaEstoque: true,
   vendavel: true,
+  precoEmpresa: "",
+  exclusivoEmpresa: false,
   disponivel: true,
   diasSemana: [],
   imagemUrl: "",
@@ -197,6 +201,8 @@ export default function ProdutosPage() {
       custoMedio: String(produto.custoMedio ?? 0),
       estoqueMinimo: String(produto.estoqueMinimo ?? 0),
       unidade: produto.unidade ?? "UN",
+      precoEmpresa: produto.precoEmpresa != null ? String(produto.precoEmpresa) : "",
+      exclusivoEmpresa: Boolean(produto.exclusivoEmpresa),
       controlaEstoque: produto.controlaEstoque !== false,
       vendavel: produto.vendavel !== false,
       disponivel: Boolean(produto.disponivel),
@@ -289,6 +295,9 @@ export default function ProdutosPage() {
       custoMedio: Number(form.custoMedio || 0),
       estoque: Number(form.controlaEstoquePorVariacao ? estoqueTotalVariacoes : form.estoque),
       estoqueMinimo: Number(form.estoqueMinimo || 0),
+      // Vazio = empresa paga o mesmo preco. Zero seria "de graca".
+      precoEmpresa: form.precoEmpresa.trim() ? Number(form.precoEmpresa) : null,
+      exclusivoEmpresa: form.exclusivoEmpresa,
       variacoes: form.variacoes
         .map((variacao) => ({
           nome: variacao.nome.trim(),
@@ -718,6 +727,32 @@ export default function ProdutosPage() {
               <div className="space-y-1">
                 <Label>Minimo</Label>
                 <Input type="number" value={form.estoqueMinimo} onChange={(e) => setForm((prev) => ({ ...prev, estoqueMinimo: e.target.value }))} />
+              </div>
+            </div>
+
+            <div className="space-y-3 rounded-lg border p-3">
+              <p className="text-sm font-medium">Cardapio empresarial</p>
+              <div className="space-y-1">
+                <Label>Preco para empresa</Label>
+                <Input
+                  type="number"
+                  step="0.01"
+                  value={form.precoEmpresa}
+                  onChange={(e) => setForm((prev) => ({ ...prev, precoEmpresa: e.target.value }))}
+                  placeholder="Em branco: empresa paga o mesmo preco"
+                />
+              </div>
+              <div className="flex items-center gap-3">
+                <Switch
+                  checked={form.exclusivoEmpresa}
+                  onCheckedChange={(value) => setForm((prev) => ({ ...prev, exclusivoEmpresa: value }))}
+                />
+                <div>
+                  <Label>So para empresas</Label>
+                  <p className="text-xs text-muted-foreground">
+                    Some do cardapio comum e aparece so para empresa logada.
+                  </p>
+                </div>
               </div>
             </div>
 

@@ -420,10 +420,67 @@ export default function CardapioPage() {
   const [cupomErro, setCupomErro] = useState("");
   const cupomUrlRef = useRef<string | null>(null);
 
+  // Sessao da empresa conveniada. Fica no localStorage para o convenio nao cair
+  // a cada recarga da pagina; o token expira em 12h no servidor.
+  const [empresa, setEmpresa] = useState<{ token: string; nome: string } | null>(() => {
+    try {
+      const salvo = localStorage.getItem("barracao_empresa");
+      return salvo ? JSON.parse(salvo) : null;
+    } catch {
+      return null;
+    }
+  });
+  const [loginEmpresaOpen, setLoginEmpresaOpen] = useState(false);
+  const [loginForm, setLoginForm] = useState({ email: "", senha: "" });
+  const [loginErro, setLoginErro] = useState("");
+  const [entrando, setEntrando] = useState(false);
+
+  const sairEmpresa = () => {
+    try {
+      localStorage.removeItem("barracao_empresa");
+    } catch {
+      /* ignore */
+    }
+    setEmpresa(null);
+  };
+
+  const entrarEmpresa = async () => {
+    setEntrando(true);
+    setLoginErro("");
+    try {
+      const res = await fetch(`${API_URL}/api/cardapio/empresa/login`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(loginForm),
+      });
+      const dados = await res.json();
+      if (!res.ok) throw new Error(dados?.error || "Nao foi possivel entrar.");
+      const sessao = { token: dados.token, nome: dados.empresa?.nome ?? "Empresa" };
+      try {
+        localStorage.setItem("barracao_empresa", JSON.stringify(sessao));
+      } catch {
+        /* ignore */
+      }
+      setEmpresa(sessao);
+      setLoginEmpresaOpen(false);
+      setLoginForm({ email: "", senha: "" });
+    } catch (err: any) {
+      setLoginErro(err.message || "Nao foi possivel entrar.");
+    } finally {
+      setEntrando(false);
+    }
+  };
+
   const { data: produtos = [], isLoading } = useQuery({
-    queryKey: ["cardapio-publico"],
+    // O token entra na chave: trocar de sessao tem que recarregar o cardapio,
+    // senao a empresa continuaria vendo os precos do varejo em cache.
+    queryKey: ["cardapio-publico", empresa?.token ?? "publico"],
     queryFn: async () => {
-      const res = await fetch(`${API_URL}/api/cardapio?todos=true`);
+      const res = await fetch(`${API_URL}/api/cardapio?todos=true`, {
+        headers: empresa?.token ? { Authorization: `Bearer ${empresa.token}` } : undefined,
+      });
+      // Token vencido: volta a ser visita comum em vez de travar o cardapio.
+      if (res.status === 401 || res.status === 403) sairEmpresa();
       return res.json();
     },
   });
@@ -878,6 +935,11 @@ export default function CardapioPage() {
       const res = await fetch(`${API_URL}/api/cardapio/pedido`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
+        // Sem o token aqui o servidor trata como visita comum e cobra o preco
+        // do varejo, mesmo com a empresa logada na tela.
+        headers: empresa?.token
+          ? { "Content-Type": "application/json", Authorization: `Bearer ${empresa.token}` }
+          : { "Content-Type": "application/json" },
         body: JSON.stringify({
           ...form,
           // Troca de salada e alergia entram nas observacoes, que e o que a
@@ -1108,6 +1170,25 @@ export default function CardapioPage() {
             </div>
           </div>
           <div className="flex items-center gap-2">
+          {empresa ? (
+            <button
+              onClick={sairEmpresa}
+              className="hidden items-center gap-2 rounded-xl border border-blue-400/40 bg-blue-500/15 px-3 py-2 text-sm font-medium text-blue-200 transition hover:bg-blue-500/25 sm:flex"
+              title="Sair do cardápio empresarial"
+            >
+              <Building2 className="h-5 w-5" />
+              <span className="max-w-[140px] truncate">{empresa.nome}</span>
+            </button>
+          ) : (
+            <button
+              onClick={() => setLoginEmpresaOpen(true)}
+              className="hidden items-center gap-2 rounded-xl border border-white/15 bg-white/10 px-3 py-2 text-sm font-medium text-white transition hover:bg-white/20 sm:flex"
+              title="Acesso para empresas conveniadas"
+            >
+              <Building2 className="h-5 w-5" />
+              <span>Sou empresa</span>
+            </button>
+          )}
           {linkConvenio && (
             <a
               href={linkConvenio}
@@ -1753,6 +1834,12 @@ export default function CardapioPage() {
         </div>
       )}
 
+      {empresa && (
+        <div className="border-b border-blue-400/30 bg-blue-500/15 px-4 py-2 text-center text-sm text-blue-100">
+          Você está no cardápio de <strong>{empresa.nome}</strong>. Os preços abaixo são os do convênio.
+        </div>
+      )}
+
       <main className="max-w-5xl mx-auto px-4 py-6 pb-24">
         {isLoading ? (
           <div className="flex items-center justify-center h-40">
@@ -1951,6 +2038,49 @@ export default function CardapioPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+      <Dialog open={loginEmpresaOpen} onOpenChange={setLoginEmpresaOpen}>
+        <DialogContent className="max-w-sm border-marrom-800 bg-marrom-950 text-white">
+          <DialogHeader>
+            <DialogTitle>Acesso para empresas</DialogTitle>
+          </DialogHeader>
+          <p className="text-sm text-marrom-300">
+            Para empresas conveniadas. Se a sua ainda não tem convênio, fale com a gente pelo
+            botão "Para empresas".
+          </p>
+          <div className="space-y-3">
+            <div className="space-y-1">
+              <Label className="text-white">E-mail</Label>
+              <Input
+                className={darkInputClass}
+                type="email"
+                value={loginForm.email}
+                onChange={(e) => setLoginForm((f) => ({ ...f, email: e.target.value }))}
+              />
+            </div>
+            <div className="space-y-1">
+              <Label className="text-white">Senha</Label>
+              <Input
+                className={darkInputClass}
+                type="password"
+                value={loginForm.senha}
+                onChange={(e) => setLoginForm((f) => ({ ...f, senha: e.target.value }))}
+                onKeyDown={(e) => e.key === "Enter" && entrarEmpresa()}
+              />
+            </div>
+            {loginErro && <p className="text-sm text-red-400">{loginErro}</p>}
+          </div>
+          <DialogFooter>
+            <Button
+              className="bg-blue-600 text-white hover:bg-blue-700"
+              disabled={entrando || !loginForm.email || !loginForm.senha}
+              onClick={entrarEmpresa}
+            >
+              {entrando ? "Entrando..." : "Entrar"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       <Dialog open={promptNovoItemOpen} onOpenChange={setPromptNovoItemOpen}>
         <DialogContent className="max-w-sm border-marrom-800 bg-marrom-950 text-white">
           <DialogHeader>

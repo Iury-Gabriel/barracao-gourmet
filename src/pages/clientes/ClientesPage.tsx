@@ -20,7 +20,7 @@ function fmt(v: number) {
   return v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 }
 
-const emptyForm = { nome: "", telefone: "", email: "", endereco: "", bairro: "", cidade: "São Paulo", observacoes: "", tipoEndereco: "RESIDENCIAL", entregaGratis: false };
+const emptyForm = { nome: "", telefone: "", email: "", endereco: "", bairro: "", cidade: "São Paulo", observacoes: "", tipoEndereco: "RESIDENCIAL", senha: "", entregaGratis: false };
 
 export default function ClientesPage() {
   const queryClient = useQueryClient();
@@ -177,6 +177,20 @@ export default function ClientesPage() {
                 </SelectContent>
               </Select>
             </div>
+            {form.tipoEndereco === "COMERCIAL" && (
+              <div className="space-y-1">
+                <Label>Senha do cardápio empresarial</Label>
+                <Input
+                  type="password"
+                  value={form.senha}
+                  onChange={e => setForm(f => ({ ...f, senha: e.target.value }))}
+                  placeholder="Em branco: mantém a senha atual"
+                />
+                <p className="text-[11px] text-muted-foreground">
+                  Com senha definida, a empresa entra no cardápio com o e-mail acima e vê a tabela dela.
+                </p>
+              </div>
+            )}
             <div className="space-y-1"><Label>Endereço</Label><Input value={form.endereco} onChange={e => setForm(f => ({ ...f, endereco: e.target.value }))} placeholder="Rua, número" /></div>
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1"><Label>Bairro</Label><Input value={form.bairro} onChange={e => setForm(f => ({ ...f, bairro: e.target.value }))} /></div>

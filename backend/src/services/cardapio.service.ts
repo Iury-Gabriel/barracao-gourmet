@@ -408,6 +408,8 @@ export async function listarProdutosCardapio(empresaLogada = false) {
         controlaEstoquePorVariacao: true,
         diasSemana: true,
         preco: true,
+        precoEmpresa: true,
+        exclusivoEmpresa: true,
         imagemUrl: true,
         disponivel: true,
         estoque: true,
@@ -437,9 +439,19 @@ export async function listarProdutosCardapio(empresaLogada = false) {
   );
 }
 
-export async function listarTodosProdutosCardapio() {
+/**
+ * Cardapio com os esgotados incluidos (para a vitrine marcar "esgotado").
+ *
+ * E esta a funcao que a tela usa. Sem o mesmo tratamento de empresa, o item
+ * exclusivo apareceria para todo mundo e a empresa veria o preco do varejo.
+ */
+export async function listarTodosProdutosCardapio(empresaLogada = false) {
   const [produtos, mapaAcrescimo] = await Promise.all([
     prisma.produto.findMany({
+      where: {
+        vendavel: true,
+        ...(empresaLogada ? {} : { exclusivoEmpresa: false }),
+      },
       orderBy: [{ categoria: 'asc' }, { nome: 'asc' }],
       select: {
         id: true,
@@ -450,6 +462,8 @@ export async function listarTodosProdutosCardapio() {
         controlaEstoquePorVariacao: true,
         diasSemana: true,
         preco: true,
+        precoEmpresa: true,
+        exclusivoEmpresa: true,
         imagemUrl: true,
         disponivel: true,
         estoque: true,
@@ -471,6 +485,10 @@ export async function listarTodosProdutosCardapio() {
   return ordenarProdutosPorPedidos(
     produtos.map((produto) => ({
       ...prepararProdutoCardapio(produto, false),
+      // A vitrine mostra o preco do convenio, mas o valor cobrado e sempre
+      // recalculado no servidor na hora de fechar o pedido.
+      ...(empresaLogada && produto.precoEmpresa != null ? { preco: produto.precoEmpresa } : {}),
+      precoVarejo: produto.preco,
       acrescimoCartaoCategoria: mapaAcrescimo.get(produto.categoria) || 0,
     })),
   );
