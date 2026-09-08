@@ -30,6 +30,7 @@ import {
   faq,
   galeria,
   heroDestaques,
+  mensagemDeFe,
   horarios,
   siteInfo,
   sobre,
@@ -671,6 +672,7 @@ export default function LandingPage() {
             <p>
               © {new Date().getFullYear()} {siteInfo.nome}. Todos os direitos reservados.
             </p>
+            <p className="text-amber-300/80">{mensagemDeFe}</p>
             <Link to="/login" className="hover:text-amber-300">
               Acesso da equipe
             </Link>

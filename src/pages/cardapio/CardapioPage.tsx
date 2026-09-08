@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
+import { mensagemDeFe } from "@/pages/site/siteContent";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -1865,6 +1866,10 @@ export default function CardapioPage() {
             })}
           </div>
         )}
+
+        {/* A casa e crista e o dono pediu a frase. Fica no fim, discreta, para
+            quem quiser ler; nao atravessa quem so quer pedir comida. */}
+        <p className="mt-10 text-center text-xs text-marrom-300">{mensagemDeFe}</p>
       </main>
 
       {qtdCarrinho > 0 && (

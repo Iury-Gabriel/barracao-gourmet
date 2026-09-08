@@ -13,7 +13,7 @@ export const siteInfo = {
   nome: "Barracão Gourmet",
   tagline: "Comida caseira de verdade, feita na hora",
   descricaoCurta:
-    "Prato do dia com arroz, feijão, batata, legumes e farofa — e churrasco todos os dias. Almoce no salão, retire no balcão ou receba em casa.",
+    "Marmita pronta para empresas e para quem treina: prato do dia completo, opções fit e churrasco todos os dias. Peça para o seu time ou receba em casa.",
   // Endereço real, conferido no onboarding e usado no cálculo de frete.
   endereco: {
     linha1: "R. Olga Genioli Leite, 50",
@@ -43,10 +43,18 @@ export const acompanhamentoPadrao = "Arroz, feijão, batata, legumes e farofa";
 
 /** Aparece logo abaixo do título do hero, como prova rápida. */
 export const heroDestaques = [
+  { titulo: "Convênio para empresas", detalhe: "Marmita diária para o seu time" },
+  { titulo: "Opções fitness", detalhe: "Salmão, frango e marmita só de salada" },
   { titulo: "Churrasco todos os dias", detalhe: "Na brasa, de segunda a sábado" },
-  { titulo: "Prato feito na hora", detalhe: "Com acompanhamento completo" },
-  { titulo: "Entrega e retirada", detalhe: "Frete calculado por distância" },
 ];
+
+/**
+ * Frase de fé no rodapé do site e do cardápio.
+ *
+ * A casa é cristã e o dono pediu isso. Fica em um lugar só, discreto, em vez
+ * de espalhado pelas telas: quem quiser ler, lê; quem não quiser, não esbarra.
+ */
+export const mensagemDeFe = "Que Deus abençoe a sua refeição e o seu dia. Fica com Deus!";
 
 /** Seção "Nossa casa" — o texto que apresenta o restaurante. */
 export const sobre = {
