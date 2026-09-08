@@ -42,6 +42,8 @@ export function useAutoPrintEnabled(): [boolean, (v: boolean) => void] {
 
 // Hook global (montado no layout): enquanto a impressao automatica estiver ligada,
 // busca os pedidos e imprime os que chegarem novos. Nao imprime o historico ja existente.
+const chaveImpressao = (pedido: any) => `${pedido.id}:${pedido.alteradoEm ?? ""}`;
+
 export function useAutoPrintPedidos() {
   const [enabled] = useAutoPrintEnabled();
   const vistosRef = useRef<Set<string>>(new Set());
@@ -69,17 +71,19 @@ export function useAutoPrintPedidos() {
 
     // Primeira leitura desta sessao: marca tudo como visto (nao imprime o que ja existia).
     if (!seededRef.current) {
-      pedidos.forEach((p) => p?.id && vistosRef.current.add(p.id));
+      pedidos.forEach((p) => p?.id && vistosRef.current.add(chaveImpressao(p)));
       seededRef.current = true;
       return;
     }
 
-    const novos = pedidos.filter((p) => p?.id && !vistosRef.current.has(p.id));
+    // A chave inclui a marca de alteracao: pedido alterado vira "novo" e sai
+    // outro cupom, avisando a cozinha de que o papel anterior nao vale mais.
+    const novos = pedidos.filter((p) => p?.id && !vistosRef.current.has(chaveImpressao(p)));
     if (novos.length === 0) return;
 
     // Imprime do mais antigo para o mais novo (a lista vem do mais novo para o mais antigo).
     [...novos].reverse().forEach((pedido) => {
-      vistosRef.current.add(pedido.id);
+      vistosRef.current.add(chaveImpressao(pedido));
       imprimirPedido(pedido);
     });
   }, [data, enabled]);

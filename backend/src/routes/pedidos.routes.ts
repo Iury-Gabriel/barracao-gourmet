@@ -14,6 +14,7 @@ router.post('/', pedidosController.criar);
 router.patch('/:id/status', pedidosController.atualizarStatus);
 router.patch('/:id/pagamento', pedidosController.atualizarPagamento);
 router.patch('/:id/marcar-impresso', pedidosController.marcarImpresso);
+router.patch('/:id/itens', pedidosController.alterarItens);
 router.post('/:id/estornar', pedidosController.estornar);
 router.delete('/:id/remover', pedidosController.remover);
 router.delete('/:id', pedidosController.cancelar);

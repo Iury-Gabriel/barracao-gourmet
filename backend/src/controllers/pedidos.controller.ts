@@ -60,6 +60,13 @@ export async function atualizarPagamento(req: Request, res: Response, next: Next
   } catch (err) { next(err); }
 }
 
+export async function alterarItens(req: Request, res: Response, next: NextFunction) {
+  try {
+    const pedido = await pedidosService.alterarItensPedido(req.params.id, req.body?.itens);
+    res.json(pedido);
+  } catch (err) { next(err); }
+}
+
 export async function estornar(req: Request, res: Response, next: NextFunction) {
   try {
     const valor = req.body?.valor !== undefined ? Number(req.body.valor) : undefined;

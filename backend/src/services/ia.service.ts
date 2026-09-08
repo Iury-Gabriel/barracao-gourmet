@@ -2067,11 +2067,54 @@ Contato do cliente: ${telefoneCliente}` : '');
     },
   });
 
+  // Janela curta para o cliente se corrigir sozinho, sem ocupar a equipe.
+  // Passado o prazo a comida ja esta sendo feita, e ai o caso vira humano.
+  const alterarPedidoWhatsapp = new DynamicStructuredTool({
+    name: 'alterar_pedido',
+    description:
+      'Troca os itens de um pedido ja enviado, dentro dos primeiros 10 minutos. ' +
+      'Informe a lista completa de itens que o pedido deve passar a ter, nao so o que mudou.',
+    schema: z.object({
+      pedidoId: z.string().describe('Id do pedido que o cliente quer mudar'),
+      itens: z
+        .array(
+          z.object({
+            produtoId: z.string(),
+            quantidade: z.number(),
+            variacaoNome: z.string().optional(),
+          }),
+        )
+        .describe('Como o pedido fica depois da mudanca, com todos os itens'),
+    }),
+    func: async ({ pedidoId, itens }) => {
+      try {
+        const { alterarItensPedido } = await import('./pedidos.service');
+        const pedido = await alterarItensPedido(pedidoId, itens as any);
+        return JSON.stringify({
+          sucesso: true,
+          numero: pedido.numero,
+          total: pedido.total,
+          itens: pedido.itens.map((i: any) => `${i.quantidade}x ${i.produto?.nome ?? 'item'}`),
+          mensagemParaCliente:
+            'Alterei seu pedido e a cozinha ja foi avisada da mudanca. Confere se ficou certo.',
+        });
+      } catch (error: any) {
+        // O motivo volta em texto porque quase sempre e o prazo estourado, e a
+        // Linda precisa explicar isso ao cliente em vez de so falhar.
+        return JSON.stringify({
+          sucesso: false,
+          erro: error?.message || 'Nao consegui alterar o pedido.',
+        });
+      }
+    },
+  });
+
   return [
     consultarCatalogoProdutos,
     consultarProdutoDetalhado,
     montarResumoPedido,
     criarPedidoWhatsapp,
+    alterarPedidoWhatsapp,
     consultarCepTool,
     calcularFrete,
     gerarLinkCardapio,
@@ -2180,6 +2223,12 @@ Cliente que ja pediu antes:
 - Se o que ele costuma pedir esta em promocao hoje, avise na mesma mensagem.
 - Nunca invente o pedido anterior: se a tool nao devolver nada, atenda normal
   sem citar historico.
+
+Alteracao de pedido:
+- O cliente pode mudar o pedido nos primeiros 10 minutos, usando a tool alterar_pedido.
+- Passe a lista completa de itens que o pedido deve ter no final, nao so o que mudou.
+- Se a tool recusar por prazo, explique com gentileza que a cozinha ja comecou e
+  ofereca falar com a equipe. Nunca prometa a alteracao sem a tool confirmar.
 
 Convenio para empresas:
 - Empresa que quer fornecer marmita para os funcionarios e assunto de convenio,

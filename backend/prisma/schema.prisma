@@ -186,6 +186,9 @@ model Pedido {
   cupomCodigo     String?
   descontoCupom   Float    @default(0)
   impresso        Boolean  @default(false)
+  // Quando o cliente mudou o pedido depois de enviado. A cozinha precisa saber
+  // que o papel anterior nao vale mais.
+  alteradoEm      DateTime?
   observacoes     String?
   criadoEm       DateTime @default(now())
   atualizadoEm   DateTime @updatedAt

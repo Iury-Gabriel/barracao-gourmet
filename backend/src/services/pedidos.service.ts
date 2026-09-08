@@ -938,3 +938,88 @@ export async function estornarPagamentoPedido(pedidoId: string, valor?: number) 
     };
   }
 }
+
+/** Janela em que o cliente ainda pode mexer no proprio pedido. */
+export const MINUTOS_PARA_ALTERAR_PEDIDO = 10;
+
+/**
+ * Troca os itens de um pedido ja enviado.
+ *
+ * A janela e curta de proposito: passado esse tempo a comida ja esta sendo
+ * feita e trocar sai caro para a casa. Tambem so vale enquanto o pedido nao
+ * saiu para entrega.
+ *
+ * Marca alteradoEm e zera impresso, que e o que faz a impressao automatica
+ * soltar um cupom novo avisando a cozinha de que o papel anterior nao vale.
+ */
+export async function alterarItensPedido(
+  pedidoId: string,
+  itens: Array<{ produtoId: string; quantidade: number; variacaoNome?: string }>,
+) {
+  const pedido = await prisma.pedido.findUnique({
+    where: { id: pedidoId },
+    select: { id: true, numero: true, status: true, criadoEm: true, total: true, itens: true },
+  });
+  if (!pedido) throw { status: 404, message: 'Pedido nao encontrado.' };
+
+  if (['ENTREGUE', 'CANCELADO', 'EM_ENTREGA'].includes(pedido.status)) {
+    throw { status: 400, message: 'Este pedido nao pode mais ser alterado.' };
+  }
+
+  const minutos = (Date.now() - new Date(pedido.criadoEm).getTime()) / 60000;
+  if (minutos > MINUTOS_PARA_ALTERAR_PEDIDO) {
+    throw {
+      status: 400,
+      message: `O prazo para alterar o pedido e de ${MINUTOS_PARA_ALTERAR_PEDIDO} minutos e ja passou. Fale com a nossa equipe.`,
+    };
+  }
+
+  if (!Array.isArray(itens) || itens.length === 0) {
+    throw { status: 400, message: 'Informe ao menos um item.' };
+  }
+
+  const produtos = await prisma.produto.findMany({
+    where: { id: { in: itens.map((i) => i.produtoId) } },
+    select: { id: true, nome: true, preco: true, disponivel: true },
+  });
+
+  const novosItens = itens.map((item) => {
+    const produto = produtos.find((p) => p.id === item.produtoId);
+    if (!produto) throw { status: 400, message: `Produto ${item.produtoId} nao encontrado.` };
+    if (!produto.disponivel) throw { status: 400, message: `"${produto.nome}" nao esta disponivel.` };
+    const quantidade = Math.max(1, Math.trunc(Number(item.quantidade) || 1));
+    return {
+      produtoId: produto.id,
+      quantidade,
+      variacaoNome: item.variacaoNome || null,
+      precoUnit: produto.preco,
+      subtotal: produto.preco * quantidade,
+    };
+  });
+
+  const subtotal = novosItens.reduce((acc, i) => acc + i.subtotal, 0);
+  // O frete ja cobrado continua valendo: o endereco nao mudou.
+  const freteAtual = Math.max(0, pedido.total - pedido.itens.reduce((acc, i) => acc + i.subtotal, 0));
+
+  const [atualizado] = await prisma.$transaction([
+    prisma.pedido.update({
+      where: { id: pedidoId },
+      data: {
+        total: subtotal + freteAtual,
+        alteradoEm: new Date(),
+        impresso: false,
+        itens: { deleteMany: {}, create: novosItens },
+      },
+      include: { itens: { include: { produto: true } } },
+    }),
+    prisma.historicoPedido.create({
+      data: {
+        pedidoId,
+        status: pedido.status,
+        obs: `Pedido alterado pelo cliente dentro do prazo de ${MINUTOS_PARA_ALTERAR_PEDIDO} minutos.`,
+      },
+    }),
+  ]);
+
+  return atualizado;
+}

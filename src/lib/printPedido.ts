@@ -135,9 +135,12 @@ export function montarHtmlCupom(pedido: any): string {
     .selo-troco-sub { font-size: 10px; }
     .selo-alergia { border: 3px solid #000; text-align: center; padding: 4px 2px; margin: 6px 0; font-size: 12px; font-weight: 700; letter-spacing: 1px; }
     .selo-alergia-val { font-size: 15px; letter-spacing: 0; }
+    .selo-alterado { background: #000; color: #fff; text-align: center; padding: 5px 2px; margin: 0 0 6px; font-size: 15px; font-weight: 700; letter-spacing: 1px; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    .selo-alterado-sub { font-size: 10px; font-weight: 400; letter-spacing: 0; }
   </style></head>
   <body>
     <div class="cupom">
+      ${pedido?.alteradoEm ? `<div class="selo-alterado">PEDIDO ALTERADO<div class="selo-alterado-sub">Descarte o cupom anterior deste pedido</div></div>` : ""}
       <div class="center titulo">BARRACAO GOURMET</div>
       <div class="center num">PEDIDO #${escapeHtml(String(pedido?.numero ?? ""))}</div>
       <div class="center">${dataHora(pedido?.criadoEm)}</div>
