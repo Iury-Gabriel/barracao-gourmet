@@ -16,6 +16,15 @@ import { criarReserva } from './reservas.service';
 import { gerarQrCodePix, isMercadoPagoConfigured } from './mercado-pago.service';
 
 // Dominio proprio ainda nao registrado; por enquanto o cardapio publico vive no sslip.io.
+// O que a Linda pode oferecer. Antes o filtro era so estoque > 0, e prato do
+// dia e marmita (feitos na hora, sem quantidade cadastrada) sumiam do cardapio
+// dela assim que o estoque zerava. Quem nao controla estoque entra sempre;
+// quem controla continua precisando de saldo. Insumo nunca aparece.
+const FILTRO_ITEM_A_VENDA = {
+  vendavel: true,
+  OR: [{ controlaEstoque: false }, { estoque: { gt: 0 } }],
+};
+
 const ATENDIMENTO_CARDAPIO_URL =
   process.env.CARDAPIO_PUBLIC_URL || 'https://barracao.86-48-19-98.sslip.io/cardapio';
 const ATENDIMENTO_AVISO_HORARIO_ENTREGA =
@@ -518,7 +527,7 @@ async function responderCatalogoSemAlucinacao(mensagem: string) {
   const produtos = await prisma.produto.findMany({
     where: {
       disponivel: true,
-      estoque: { gt: 0 },
+      ...FILTRO_ITEM_A_VENDA,
     },
     orderBy: [{ categoria: 'asc' }, { nome: 'asc' }],
     select: {
@@ -1045,7 +1054,7 @@ function criarToolsAtendimento(contexto: { mensagensUsuarioRecentes: string[] } 
       const produtos = await prisma.produto.findMany({
         where: {
           ...(apenasDisponiveis !== false ? { disponivel: true } : {}),
-          estoque: { gt: 0 },
+          ...FILTRO_ITEM_A_VENDA,
         },
         orderBy: [{ categoria: 'asc' }, { nome: 'asc' }],
         take: Math.max(take * 3, 30),
@@ -1148,7 +1157,7 @@ function criarToolsAtendimento(contexto: { mensagensUsuarioRecentes: string[] } 
         const matches = await prisma.produto.findMany({
           where: {
             disponivel: true,
-            estoque: { gt: 0 },
+            ...FILTRO_ITEM_A_VENDA,
           },
           orderBy: { nome: 'asc' },
           take: 200,

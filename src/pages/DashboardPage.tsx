@@ -16,7 +16,7 @@ import { ptBR } from "date-fns/locale";
 import UnifiedPeriodFilter, { UnifiedPeriod, getRangeFromFilter } from "@/components/shared/UnifiedPeriodFilter";
 
 // Origem dos pedidos: veio de "KPIs & Indicadores", absorvido pelo Dashboard.
-const ORIGEM_CORES = ["hsl(var(--primary))", "#10b981", "#f59e0b", "#ef4444", "#8b5cf6"];
+const ORIGEM_CORES = ["hsl(var(--grafico))", "#10b981", "#f59e0b", "#ef4444", "#8b5cf6"];
 const ORIGEM_LABEL: Record<string, string> = {
   CARDAPIO_DIGITAL: "Cardapio digital",
   CATALOGO: "Cardapio digital",
@@ -166,15 +166,15 @@ export default function DashboardPage() {
                 <AreaChart data={receitaPeriodo}>
                   <defs>
                     <linearGradient id="dashboardReceita" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.25} />
-                      <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0} />
+                      <stop offset="5%" stopColor="hsl(var(--grafico))" stopOpacity={0.25} />
+                      <stop offset="95%" stopColor="hsl(var(--grafico))" stopOpacity={0} />
                     </linearGradient>
                   </defs>
                   <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
                   <XAxis dataKey="data" tick={{ fontSize: 10 }} tickFormatter={(v) => format(new Date(v + "T12:00:00"), "dd/MM")} />
                   <YAxis tick={{ fontSize: 10 }} tickFormatter={(v) => `R$${(v / 1000).toFixed(0)}k`} />
                   <Tooltip formatter={(v: any) => fmt(v)} labelFormatter={(v) => format(new Date(v + "T12:00:00"), "dd/MM/yyyy", { locale: ptBR })} />
-                  <Area type="monotone" dataKey="valor" stroke="hsl(var(--primary))" fill="url(#dashboardReceita)" strokeWidth={2} />
+                  <Area type="monotone" dataKey="valor" stroke="hsl(var(--grafico))" fill="url(#dashboardReceita)" strokeWidth={2} />
                 </AreaChart>
               </ResponsiveContainer>
             ) : (

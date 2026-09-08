@@ -50,8 +50,18 @@ model Produto {
   preco          Float
   custoMedio     Float    @default(0)
   custoUltimaCompra Float @default(0)
-  estoque        Int      @default(0)
-  estoqueMinimo  Int      @default(5)
+  // Float porque item vendido por peso tem fracao (2.5 kg).
+  estoque        Float    @default(0)
+  estoqueMinimo  Float    @default(5)
+  // UN conta unidades, KG controla por peso.
+  unidade        String   @default("UN")
+  // Prato feito na hora (marmita, prato do dia) nao tem quantidade a controlar.
+  // Com false ele nunca some da venda por estoque zerado, nao entra nos alertas
+  // de reposicao e nao sofre baixa quando e vendido.
+  controlaEstoque Boolean @default(true)
+  // Insumo (arroz, embalagem, gas) existe no estoque mas nao e vendido: com
+  // false o item some do cardapio e continua no controle de estoque.
+  vendavel       Boolean  @default(true)
   disponivel     Boolean  @default(true)
   // Dias em que o prato entra no cardapio do dia. 0=domingo .. 6=sabado.
   // Vazio = todos os dias (ex: Churrasco). Mesmo padrao do Cupom.
@@ -74,8 +84,8 @@ model ProdutoVariacao {
   nome        String
   descricao   String?
   ordem       Int      @default(0)
-  estoque     Int      @default(0)
-  estoqueMinimo Int    @default(0)
+  estoque     Float    @default(0)
+  estoqueMinimo Float  @default(0)
   criadoEm    DateTime @default(now())
   atualizadoEm DateTime @updatedAt
 

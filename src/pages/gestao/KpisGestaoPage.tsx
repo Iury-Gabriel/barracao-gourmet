@@ -20,7 +20,7 @@ function fmt(v: number) {
   return v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 }
 
-const COLORS = ["hsl(var(--primary))", "#10b981", "#f59e0b", "#ef4444", "#8b5cf6"];
+const COLORS = ["hsl(var(--grafico))", "#10b981", "#f59e0b", "#ef4444", "#8b5cf6"];
 
 export default function KpisGestaoPage() {
   const navigate = useNavigate();
@@ -199,7 +199,7 @@ export default function KpisGestaoPage() {
                   <XAxis type="number" tick={{ fontSize: 10 }} />
                   <YAxis type="category" dataKey="nome" tick={{ fontSize: 10 }} width={100} />
                   <Tooltip formatter={(v: any, name: string) => [name === "qtd" ? `${v} un.` : fmt(v), name === "qtd" ? "Qtd" : "Receita"]} />
-                  <Bar dataKey="qtd" fill="hsl(var(--primary))" radius={[0, 4, 4, 0]} name="qtd" />
+                  <Bar dataKey="qtd" fill="hsl(var(--grafico))" radius={[0, 4, 4, 0]} name="qtd" />
                 </BarChart>
               </ResponsiveContainer>
             )}

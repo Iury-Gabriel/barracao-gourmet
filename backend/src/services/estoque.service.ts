@@ -14,10 +14,12 @@ type ProdutoVariacaoInput = {
   estoqueMinimo?: number;
 };
 
+// Aceita fracao porque item vendido por peso tem 2.5 kg. Antes truncava, o que
+// zerava qualquer quantidade menor que 1.
 function toNonNegativeInt(value: unknown, fallback = 0) {
   const numero = Number(value);
   if (!Number.isFinite(numero)) return fallback;
-  return Math.max(0, Math.trunc(numero));
+  return Math.max(0, Math.round(numero * 1000) / 1000);
 }
 
 function sanitizeVariacoes(variacoes?: ProdutoVariacaoInput[]) {
@@ -136,7 +138,13 @@ export async function listarProdutos(filtros: { categoria?: string; disponivel?:
 
   const produtosComEstoque = produtos.map((produto) => mapearProdutoComEstoqueCalculado(produto));
   if (filtros.alertas) {
-    return produtosComEstoque.filter((produto) => Number(produto.estoque || 0) <= Number(produto.estoqueMinimo || 0));
+    // Item sem controle de estoque (prato feito na hora) fica sempre em zero e
+    // entupiria a tela de alertas com reposicao que nao existe.
+    return produtosComEstoque.filter(
+      (produto) =>
+        produto.controlaEstoque !== false &&
+        Number(produto.estoque || 0) <= Number(produto.estoqueMinimo || 0)
+    );
   }
 
   return produtosComEstoque;
@@ -160,6 +168,9 @@ export async function criarProduto(data: {
   categoria: string;
   tipoVariacao?: string;
   controlaEstoquePorVariacao?: boolean;
+  controlaEstoque?: boolean;
+  vendavel?: boolean;
+  unidade?: string;
   preco: number;
   custoMedio?: number;
   custoUltimaCompra?: number;
@@ -172,8 +183,8 @@ export async function criarProduto(data: {
 }) {
   const custoBase = data.custoMedio ?? data.custoUltimaCompra ?? 0;
   const variacoes = sanitizeVariacoes(data.variacoes);
-  const controlaEstoque = Boolean(data.controlaEstoquePorVariacao);
-  const estoque = controlaEstoque
+  const estoquePorVariacao = Boolean(data.controlaEstoquePorVariacao);
+  const estoque = estoquePorVariacao
     ? calcularEstoqueTotalVariacoes(variacoes)
     : toNonNegativeInt(data.estoque);
 
@@ -181,7 +192,7 @@ export async function criarProduto(data: {
     data: {
       ...data,
       tipoVariacao: data.tipoVariacao?.trim() || null,
-      controlaEstoquePorVariacao: controlaEstoque,
+      controlaEstoquePorVariacao: estoquePorVariacao,
       custoMedio: custoBase,
       custoUltimaCompra: data.custoUltimaCompra ?? custoBase,
       estoque,
@@ -200,6 +211,9 @@ export async function atualizarProduto(id: string, data: Partial<{
   categoria: string;
   tipoVariacao: string;
   controlaEstoquePorVariacao: boolean;
+  controlaEstoque: boolean;
+  vendavel: boolean;
+  unidade: string;
   preco: number;
   custoMedio: number;
   custoUltimaCompra: number;
@@ -217,11 +231,11 @@ export async function atualizarProduto(id: string, data: Partial<{
   if (!produto) throw { status: 404, message: 'Produto nao encontrado.' };
 
   const variacoes = sanitizeVariacoes(data.variacoes);
-  const controlaEstoque = data.controlaEstoquePorVariacao !== undefined
+  const estoquePorVariacao = data.controlaEstoquePorVariacao !== undefined
     ? Boolean(data.controlaEstoquePorVariacao)
     : produto.controlaEstoquePorVariacao;
   const variacoesParaCalculo = variacoes ?? produto.variacoes;
-  const estoque = controlaEstoque
+  const estoque = estoquePorVariacao
     ? calcularEstoqueTotalVariacoes(variacoesParaCalculo)
     : data.estoque;
 

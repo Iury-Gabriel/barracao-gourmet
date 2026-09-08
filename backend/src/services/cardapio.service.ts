@@ -376,7 +376,8 @@ function prepararProdutoCardapio(produto: any, ocultarVariacoesSemEstoque = fals
 export async function listarProdutosCardapio() {
   const [produtos, mapaAcrescimo] = await Promise.all([
     prisma.produto.findMany({
-      where: { disponivel: true },
+      // vendavel exclui insumo (arroz, embalagem), que existe so no estoque.
+      where: { disponivel: true, vendavel: true },
       orderBy: [{ categoria: 'asc' }, { nome: 'asc' }],
       select: {
         id: true,
@@ -509,6 +510,7 @@ export async function criarPedidoCardapio(data: {
         categoria: true,
         tipoVariacao: true,
         controlaEstoquePorVariacao: true,
+        controlaEstoque: true,
         diasSemana: true,
         preco: true,
         estoque: true,
@@ -533,7 +535,12 @@ export async function criarPedidoCardapio(data: {
     const produto = produtoBase ? prepararProdutoCardapio(produtoBase, false) : null;
     if (!produto) throw { status: 400, message: `Produto ${item.produtoId} nao encontrado.` };
     if (!produto.disponivel) throw { status: 400, message: `Produto "${produto.nome}" nao esta disponivel.` };
-    if (produto.estoque < item.quantidade) throw { status: 400, message: `Estoque insuficiente para "${produto.nome}".` };
+    // Prato feito na hora nao tem saldo cadastrado: cobrar estoque dele
+    // recusaria a venda com "Estoque insuficiente" mesmo tendo comida pronta.
+    const cobraEstoque = produtoBase?.controlaEstoque !== false;
+    if (cobraEstoque && produto.estoque < item.quantidade) {
+      throw { status: 400, message: `Estoque insuficiente para "${produto.nome}".` };
+    }
     const variacoesProduto = Array.isArray(produto.variacoes) ? produto.variacoes : [];
     const produtoExigeVariacao = Boolean(produto.tipoVariacao?.trim()) || variacoesProduto.length > 0;
     const variacaoNomeInformada = item.variacaoNome?.trim();
@@ -789,6 +796,9 @@ export async function criarPedidoCardapio(data: {
 
   for (const item of itensComPreco) {
     const produto = produtos.find((entry) => entry.id === item.produtoId);
+    // Prato feito na hora nao tem saldo para descontar: sem isso o estoque
+    // ficaria negativo e o item sumiria do cardapio depois de algumas vendas.
+    if (produto && produto.controlaEstoque === false) continue;
     if (produtoControlaEstoquePorVariacao(produto) && item.variacaoNome) {
       const variacao = encontrarVariacaoPorNome(produto, item.variacaoNome);
       await prisma.$transaction([

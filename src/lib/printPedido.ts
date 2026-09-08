@@ -28,6 +28,29 @@ function escapeHtml(s: string) {
     .replace(/>/g, "&gt;");
 }
 
+// O troco e gravado dentro do texto de observacoes pelo cardapio.service, no
+// formato "Troco: sim (levar para R$ 100.00)." ou "Troco: nao.". A impressao
+// precisa destacar isso separado do resto, entao o valor e lido dali em vez de
+// virar campo novo no banco: o texto e gerado pelo proprio sistema, entao o
+// formato e estavel, e assim os pedidos ja existentes tambem saem certos.
+function extrairTroco(observacoes?: string): { precisa: boolean; para: number } | null {
+  if (!observacoes) return null;
+  const m = observacoes.match(/Troco:\s*(sim|nao)(?:\s*\(levar para R\$\s*([\d.]+)\))?/i);
+  if (!m) return null;
+  if (m[1].toLowerCase() === "nao") return { precisa: false, para: 0 };
+  return { precisa: true, para: m[2] ? Number(m[2]) : 0 };
+}
+
+// Tira do bloco OBS o que ja aparece destacado em outro lugar do cupom.
+function limparObservacoes(observacoes?: string): string {
+  if (!observacoes) return "";
+  return observacoes
+    .split("|")
+    .map((parte) => parte.trim())
+    .filter((parte) => parte && !/^Troco:/i.test(parte) && !/^Mercado Pago /i.test(parte))
+    .join(" | ");
+}
+
 export function montarHtmlCupom(pedido: any): string {
   const itens: any[] = Array.isArray(pedido?.itens) ? pedido.itens : [];
   const subtotalProdutos = itens.reduce((acc, i) => acc + Number(i?.subtotal || 0), 0);
@@ -52,7 +75,32 @@ export function montarHtmlCupom(pedido: any): string {
       </div>`
     : `<div class="sec"><div class="lbl">RETIRADA NO BALCAO</div></div>`;
 
-  const obs = pedido?.observacoes ? `<div class="sec"><div class="lbl">OBS</div><div>${escapeHtml(pedido.observacoes)}</div></div>` : "";
+  const observacoesLimpas = limparObservacoes(pedido?.observacoes);
+  const obs = observacoesLimpas
+    ? `<div class="sec"><div class="lbl">OBS</div><div>${escapeHtml(observacoesLimpas)}</div></div>`
+    : "";
+
+  const pago = pedido?.statusPagamento === "PAGO";
+  const troco = extrairTroco(pedido?.observacoes);
+  // Quanto o entregador precisa levar de volta. So faz sentido se o cliente
+  // disse para quanto quer o troco e esse valor cobre o pedido.
+  const levarDeTroco = troco?.precisa && troco.para > total ? troco.para - total : 0;
+
+  // Os dois selos sao propositalmente diferentes: pago e uma confirmacao
+  // (moldura), troco e uma acao para o entregador (invertido, chama mais).
+  const seloPagamento = pago
+    ? `<div class="selo-pago">PEDIDO PAGO<div class="selo-sub">NAO COBRAR NA ENTREGA</div></div>`
+    : "";
+
+  const seloTroco = troco?.precisa
+    ? `<div class="selo-troco">
+         <div class="selo-troco-tit">LEVAR TROCO</div>
+         <div class="selo-troco-val">${levarDeTroco > 0 ? brl(levarDeTroco) : "CONFERIR"}</div>
+         <div class="selo-troco-sub">Cliente paga com ${troco.para > 0 ? brl(troco.para) : "valor nao informado"}</div>
+       </div>`
+    : troco && !troco.precisa
+      ? `<div class="sec"><div class="lbl">TROCO</div><div>Nao precisa de troco.</div></div>`
+      : "";
 
   return `<!doctype html><html><head><meta charset="utf-8" />
   <style>
@@ -73,6 +121,12 @@ export function montarHtmlCupom(pedido: any): string {
     .item .val { white-space: nowrap; }
     .tot { display: flex; justify-content: space-between; }
     .tot.grande { font-size: 15px; font-weight: 700; }
+    .selo-pago { border: 3px double #000; text-align: center; font-size: 15px; font-weight: 700; padding: 4px 2px; margin: 6px 0; }
+    .selo-pago .selo-sub { font-size: 10px; font-weight: 700; letter-spacing: 0.5px; }
+    .selo-troco { background: #000; color: #fff; text-align: center; padding: 5px 2px; margin: 6px 0; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    .selo-troco-tit { font-size: 11px; font-weight: 700; letter-spacing: 1px; }
+    .selo-troco-val { font-size: 20px; font-weight: 700; line-height: 1.1; }
+    .selo-troco-sub { font-size: 10px; }
   </style></head>
   <body>
     <div class="cupom">
@@ -99,8 +153,10 @@ export function montarHtmlCupom(pedido: any): string {
       <div class="hr"></div>
       <div class="sec">
         <div class="lbl">PAGAMENTO</div>
-        <div>${PAGAMENTO_LABEL[pedido?.pagamento] || pedido?.pagamento || "-"}${pedido?.statusPagamento === "PAGO" ? " (PAGO)" : ""}</div>
+        <div>${PAGAMENTO_LABEL[pedido?.pagamento] || pedido?.pagamento || "-"}</div>
       </div>
+      ${seloPagamento}
+      ${seloTroco}
       ${obs}
       <div class="hr"></div>
       <div class="center">Obrigado!</div>

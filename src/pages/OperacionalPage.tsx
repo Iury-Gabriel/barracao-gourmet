@@ -130,7 +130,19 @@ export default function OperacionalPage() {
                     >
                       <CardContent className="p-3 space-y-2">
                         <div className="flex items-center justify-between">
-                          <span className="font-bold">#{pedido.numero}</span>
+                          <div className="flex items-center gap-1.5">
+                            <span className="font-bold">#{pedido.numero}</span>
+                            {/* Quem ja pagou nao pode ser cobrado de novo na entrega. */}
+                            {pedido.statusPagamento === "PAGO" ? (
+                              <Badge className="bg-emerald-600 text-white hover:bg-emerald-600 px-1.5 py-0 text-[10px]">
+                                PAGO
+                              </Badge>
+                            ) : (
+                              <Badge variant="outline" className="border-amber-500 px-1.5 py-0 text-[10px] text-amber-500">
+                                A RECEBER
+                              </Badge>
+                            )}
+                          </div>
                           <div className="flex items-center gap-1 text-xs text-muted-foreground">
                             <Clock className="h-3 w-3" />
                             {formatDistanceToNow(new Date(pedido.criadoEm), { locale: ptBR, addSuffix: true })}

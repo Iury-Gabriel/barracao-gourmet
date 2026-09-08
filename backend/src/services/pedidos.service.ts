@@ -837,13 +837,20 @@ export async function kpisPedidos(dataInicio?: string, dataFim?: string) {
 
   const porPagamento: Record<string, number> = {};
   const porPagamentoEntrega: Record<string, number> = {};
+  // Alem da contagem, quanto cada forma de pagamento representa em dinheiro:
+  // saber que 147 pedidos foram no debito nao diz quanto entrou por ali.
+  const valorPorPagamento: Record<string, number> = {};
+  const valorPorPagamentoEntrega: Record<string, number> = {};
   for (const p of pedidos) {
     const metodo = p.pagamento === 'PAGAR_NA_ENTREGA'
       ? 'PAGAR_NA_ENTREGA'
       : p.pagamento || 'PENDENTE';
     porPagamento[metodo] = (porPagamento[metodo] || 0) + 1;
+    valorPorPagamento[metodo] = (valorPorPagamento[metodo] || 0) + (p.total || 0);
     if (p.pagamento === 'PAGAR_NA_ENTREGA' && p.pagamentoEntregaMetodo) {
       porPagamentoEntrega[p.pagamentoEntregaMetodo] = (porPagamentoEntrega[p.pagamentoEntregaMetodo] || 0) + 1;
+      valorPorPagamentoEntrega[p.pagamentoEntregaMetodo] =
+        (valorPorPagamentoEntrega[p.pagamentoEntregaMetodo] || 0) + (p.total || 0);
     }
   }
 
@@ -860,6 +867,8 @@ export async function kpisPedidos(dataInicio?: string, dataFim?: string) {
     graficoDiario,
     porPagamento,
     porPagamentoEntrega,
+    valorPorPagamento,
+    valorPorPagamentoEntrega,
   };
 }
 

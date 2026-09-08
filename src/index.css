@@ -6,6 +6,10 @@
 
 @layer base {
   :root {
+    /* Cor das series dos graficos. Fica separada da --primary (o vermelho
+       da marca) porque o vermelho carrega ideia de alerta e prejuizo num
+       grafico de receita. */
+    --grafico: 217 85% 45%;
     /* Core backgrounds — branco quente */
     --background: 30 25% 97%;
     --foreground: 15 40% 12%;
@@ -87,6 +91,7 @@
   }
 
   .dark {
+    --grafico: 213 90% 62%;
     --background: 15 32% 7%;
     --foreground: 30 30% 96%;
 

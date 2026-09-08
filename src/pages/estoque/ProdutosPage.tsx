@@ -48,6 +48,9 @@ type ProdutoForm = {
   estoque: string;
   custoMedio: string;
   estoqueMinimo: string;
+  unidade: string;
+  controlaEstoque: boolean;
+  vendavel: boolean;
   disponivel: boolean;
   diasSemana: number[];
   imagemUrl: string;
@@ -86,6 +89,9 @@ const createEmptyForm = (): ProdutoForm => ({
   estoque: "",
   custoMedio: "",
   estoqueMinimo: "5",
+  unidade: "UN",
+  controlaEstoque: true,
+  vendavel: true,
   disponivel: true,
   diasSemana: [],
   imagemUrl: "",
@@ -190,6 +196,9 @@ export default function ProdutosPage() {
       estoque: String(produto.estoque),
       custoMedio: String(produto.custoMedio ?? 0),
       estoqueMinimo: String(produto.estoqueMinimo ?? 0),
+      unidade: produto.unidade ?? "UN",
+      controlaEstoque: produto.controlaEstoque !== false,
+      vendavel: produto.vendavel !== false,
       disponivel: Boolean(produto.disponivel),
       imagemUrl: produto.imagemUrl ?? "",
       variacoes: (produto.variacoes ?? []).map((variacao: any) => ({
@@ -709,6 +718,52 @@ export default function ProdutosPage() {
               <div className="space-y-1">
                 <Label>Minimo</Label>
                 <Input type="number" value={form.estoqueMinimo} onChange={(e) => setForm((prev) => ({ ...prev, estoqueMinimo: e.target.value }))} />
+              </div>
+            </div>
+
+            <div className="space-y-3 rounded-lg border p-3">
+              <div className="flex items-center gap-3">
+                <Switch
+                  checked={form.controlaEstoque}
+                  onCheckedChange={(value) => setForm((prev) => ({ ...prev, controlaEstoque: value }))}
+                />
+                <div>
+                  <Label>Controlar estoque</Label>
+                  <p className="text-xs text-muted-foreground">
+                    Desligue para prato feito na hora (marmita, prato do dia). Ele nunca fica
+                    esgotado, nao aparece nos alertas e nao da baixa quando e vendido.
+                  </p>
+                </div>
+              </div>
+
+              {form.controlaEstoque && (
+                <div className="space-y-1">
+                  <Label>Unidade</Label>
+                  <Select
+                    value={form.unidade}
+                    onValueChange={(value) => setForm((prev) => ({ ...prev, unidade: value }))}
+                  >
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="UN">Unidade (un)</SelectItem>
+                      <SelectItem value="KG">Peso (kg)</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
+
+              <div className="flex items-center gap-3">
+                <Switch
+                  checked={form.vendavel}
+                  onCheckedChange={(value) => setForm((prev) => ({ ...prev, vendavel: value }))}
+                />
+                <div>
+                  <Label>Vender no cardapio</Label>
+                  <p className="text-xs text-muted-foreground">
+                    Desligue para insumo (arroz, embalagem, gas): ele fica no estoque e some do
+                    cardapio.
+                  </p>
+                </div>
               </div>
             </div>
 

@@ -251,15 +251,15 @@ export default function FinanceiroPage() {
                   <AreaChart data={resumo.graficoDiario}>
                     <defs>
                       <linearGradient id="colorReceita" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.3} />
-                        <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0} />
+                        <stop offset="5%" stopColor="hsl(var(--grafico))" stopOpacity={0.3} />
+                        <stop offset="95%" stopColor="hsl(var(--grafico))" stopOpacity={0} />
                       </linearGradient>
                     </defs>
                     <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
                     <XAxis dataKey="data" tick={{ fontSize: 11 }} tickFormatter={v => format(new Date(v + "T12:00:00"), "dd/MM", { locale: ptBR })} />
                     <YAxis tick={{ fontSize: 11 }} tickFormatter={v => `R$${(v / 1000).toFixed(0)}k`} />
                     <Tooltip formatter={(v: any) => fmt(v)} labelFormatter={v => format(new Date(v + "T12:00:00"), "dd/MM/yyyy", { locale: ptBR })} />
-                    <Area type="monotone" dataKey="valor" stroke="hsl(var(--primary))" fill="url(#colorReceita)" strokeWidth={2} />
+                    <Area type="monotone" dataKey="valor" stroke="hsl(var(--grafico))" fill="url(#colorReceita)" strokeWidth={2} />
                   </AreaChart>
                 </ResponsiveContainer>
               ) : (

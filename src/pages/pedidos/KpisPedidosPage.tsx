@@ -79,6 +79,9 @@ export default function KpisPedidosPage() {
                 <div key={item.metodo} className="rounded-xl border p-3">
                   <p className="text-xs text-muted-foreground">{item.metodo}</p>
                   <p className="mt-1 text-2xl font-bold">{item.total}</p>
+                  <p className="text-sm font-semibold text-emerald-500">
+                    {fmt(kpis?.valorPorPagamento?.[item.metodo] ?? 0)}
+                  </p>
                 </div>
               ))}
             </div>
@@ -93,6 +96,9 @@ export default function KpisPedidosPage() {
                   <div key={metodo} className="rounded-lg bg-background border p-2">
                     <p className="text-xs text-muted-foreground">{metodo === "CARTAO_CREDITO" ? "Cartão" : "Dinheiro"}</p>
                     <p className="text-lg font-bold">{String(total)}</p>
+                    <p className="text-xs font-semibold text-emerald-500">
+                      {fmt(kpis?.valorPorPagamentoEntrega?.[metodo] ?? 0)}
+                    </p>
                   </div>
                 ))}
               </div>
@@ -152,7 +158,7 @@ export default function KpisPedidosPage() {
                   <XAxis type="number" tick={{ fontSize: 11 }} />
                   <YAxis type="category" dataKey="origem" tick={{ fontSize: 11 }} width={70} />
                   <Tooltip />
-                  <Bar dataKey="total" fill="hsl(var(--primary))" radius={[0, 4, 4, 0]} />
+                  <Bar dataKey="total" fill="hsl(var(--grafico))" radius={[0, 4, 4, 0]} />
                 </BarChart>
               </ResponsiveContainer>
             ) : (
@@ -172,7 +178,7 @@ export default function KpisPedidosPage() {
                 <XAxis dataKey="data" tick={{ fontSize: 10 }} tickFormatter={(v) => format(new Date(v + "T12:00:00"), "dd/MM")} />
                 <YAxis tick={{ fontSize: 10 }} allowDecimals={false} />
                 <Tooltip labelFormatter={(v) => format(new Date(v + "T12:00:00"), "dd/MM/yyyy", { locale: ptBR })} />
-                <Line type="monotone" dataKey="total" stroke="hsl(var(--primary))" strokeWidth={2} dot={false} />
+                <Line type="monotone" dataKey="total" stroke="hsl(var(--grafico))" strokeWidth={2} dot={false} />
               </LineChart>
             </ResponsiveContainer>
           ) : (
