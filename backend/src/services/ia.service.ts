@@ -1921,6 +1921,152 @@ function criarToolsAtendimento(contexto: { mensagensUsuarioRecentes: string[] } 
     },
   });
 
+  // Quem ja pediu antes nao quer recomecar do zero. Devolve o ultimo pedido e
+  // os cupons ativos, para a Linda oferecer o de sempre e avisar da promocao
+  // na mesma mensagem.
+  const historicoDoCliente = new DynamicStructuredTool({
+    name: 'historico_do_cliente',
+    description:
+      'Ultimo pedido do cliente e promocoes ativas. Use no inicio da conversa com quem ja comprou, ' +
+      'para oferecer o de sempre. Se nao houver historico, atenda normalmente sem citar.',
+    schema: z.object({
+      telefone: z.string().describe('Telefone do cliente, so digitos'),
+    }),
+    func: async ({ telefone }) => {
+      try {
+        const digitos = String(telefone || '').replace(/\D/g, '').slice(-11);
+        if (digitos.length < 10) return JSON.stringify({ encontrado: false });
+
+        const cliente = await prisma.cliente.findFirst({
+          where: { telefone: { contains: digitos.slice(-8) } },
+          select: { id: true, nome: true },
+        });
+
+        const ultimo = await prisma.pedido.findFirst({
+          where: {
+            status: { not: 'CANCELADO' },
+            OR: [
+              ...(cliente ? [{ clienteId: cliente.id }] : []),
+              { telefoneCliente: { contains: digitos.slice(-8) } },
+            ],
+          },
+          orderBy: { criadoEm: 'desc' },
+          select: {
+            criadoEm: true,
+            total: true,
+            itens: { select: { quantidade: true, produto: { select: { nome: true } } } },
+          },
+        });
+
+        const hoje = new Date();
+        const cupons = await prisma.cupom.findMany({
+          where: { ativo: true },
+          select: { codigo: true, tipo: true, valor: true, diasSemana: true, valorMinimoPedido: true },
+          take: 5,
+        });
+        const promocoes = cupons
+          .filter((c) => !c.diasSemana?.length || c.diasSemana.includes(hoje.getDay()))
+          .map((c) => ({
+            codigo: c.codigo,
+            desconto: c.tipo === 'PERCENTUAL' ? `${c.valor}%` : `R$ ${c.valor.toFixed(2)}`,
+            pedidoMinimo: c.valorMinimoPedido ?? null,
+          }));
+
+        if (!ultimo) {
+          return JSON.stringify({ encontrado: false, nome: cliente?.nome ?? null, promocoes });
+        }
+
+        return JSON.stringify({
+          encontrado: true,
+          nome: cliente?.nome ?? null,
+          ultimoPedido: {
+            quando: ultimo.criadoEm,
+            total: ultimo.total,
+            itens: ultimo.itens.map((i) => `${i.quantidade}x ${i.produto?.nome ?? 'item'}`),
+          },
+          promocoes,
+        });
+      } catch {
+        return JSON.stringify({ encontrado: false });
+      }
+    },
+  });
+
+  // Convenio para empresa nao fecha no automatico: a Linda coleta os dados e
+  // avisa a equipe pelo WhatsApp de gestao, que e quem negocia.
+  const avisarEquipe = new DynamicStructuredTool({
+    name: 'avisar_equipe',
+    description:
+      'Avisa a equipe pelo WhatsApp sobre um assunto que precisa de humano, como convenio para empresas. ' +
+      'Use so depois de coletar os dados que o cliente informou.',
+    schema: z.object({
+      assunto: z.string().describe('Resumo curto, ex: "Convenio para empresa"'),
+      detalhes: z.string().describe('Tudo que o cliente informou, em texto corrido'),
+      telefoneCliente: z.string().optional().describe('Telefone de quem falou, so digitos'),
+    }),
+    func: async ({ assunto, detalhes, telefoneCliente }) => {
+      try {
+        const numeros = await prisma.numeroGestao.findMany({ select: { numero: true } });
+        if (numeros.length === 0) {
+          return JSON.stringify({
+            sucesso: false,
+            erro: 'Nenhum numero de gestao cadastrado.',
+            mensagemParaCliente: 'Anotei tudo aqui e a nossa equipe entra em contato com voce.',
+          });
+        }
+
+        const instancia = await prisma.instanciaWhatsApp.findFirst({
+          where: { tipo: 'GESTAO', status: 'CONECTADO' },
+          select: { id: true },
+        });
+        const instanciaEnvio =
+          instancia ??
+          (await prisma.instanciaWhatsApp.findFirst({
+            where: { status: 'CONECTADO' },
+            select: { id: true },
+          }));
+        if (!instanciaEnvio) {
+          return JSON.stringify({
+            sucesso: false,
+            erro: 'Nenhuma instancia conectada.',
+            mensagemParaCliente: 'Anotei tudo aqui e a nossa equipe entra em contato com voce.',
+          });
+        }
+
+        const texto =
+          `*${assunto}*
+
+${detalhes}` +
+          (telefoneCliente ? `
+
+Contato do cliente: ${telefoneCliente}` : '');
+
+        // Import dinamico: o whatsapp.service ja participa do fluxo que chama a
+        // IA, e o estatico fecharia um ciclo entre os dois modulos.
+        const { enviarMensagem } = await import('./whatsapp.service');
+        for (const destino of numeros) {
+          try {
+            await enviarMensagem(instanciaEnvio.id, destino.numero, texto);
+          } catch (erro: any) {
+            console.error('[ia] falha ao avisar a equipe:', destino.numero, erro?.message);
+          }
+        }
+
+        return JSON.stringify({
+          sucesso: true,
+          mensagemParaCliente:
+            'Passei suas informacoes para a nossa equipe. Eles retornam com a proposta em breve.',
+        });
+      } catch (error: any) {
+        return JSON.stringify({
+          sucesso: false,
+          erro: error?.message || 'Nao consegui avisar a equipe.',
+          mensagemParaCliente: 'Anotei tudo aqui e a nossa equipe entra em contato com voce.',
+        });
+      }
+    },
+  });
+
   return [
     consultarCatalogoProdutos,
     consultarProdutoDetalhado,
@@ -1931,6 +2077,8 @@ function criarToolsAtendimento(contexto: { mensagensUsuarioRecentes: string[] } 
     gerarLinkCardapio,
     gerarQrCodePixTool,
     registrarReservaMesa,
+    historicoDoCliente,
+    avisarEquipe,
   ];
 }
 
@@ -2018,6 +2166,29 @@ Como voce fala:
 - Frases curtas, uma pergunta nova por mensagem
 - Nunca seja rude, nunca ignore o cliente e nunca repita a mesma coisa varias vezes
 - Nunca deixe o cliente sem resposta
+- A casa e crista. Pode se despedir com "fica com Deus", "Deus abencoe" ou
+  "que Deus te abencoe", e desejar um bom dia abencoado ao cumprimentar.
+  Use com naturalidade, uma vez por conversa, normalmente na despedida.
+  Nunca insista em religiao, nunca pergunte a religiao do cliente, nunca
+  pregue nem cite versiculo, e se o cliente demonstrar incomodo, pare na hora
+  e siga com o atendimento normal.
+
+Cliente que ja pediu antes:
+- Use a tool historico_do_cliente para ver o ultimo pedido dele.
+- Se ele ja pediu, cumprimente lembrando o que levou da ultima vez e ofereca
+  repetir. Exemplo: "Da ultima vez voce levou a parmegiana. Quer repetir?"
+- Se o que ele costuma pedir esta em promocao hoje, avise na mesma mensagem.
+- Nunca invente o pedido anterior: se a tool nao devolver nada, atenda normal
+  sem citar historico.
+
+Convenio para empresas:
+- Empresa que quer fornecer marmita para os funcionarios e assunto de convenio,
+  nao pedido normal.
+- Colete nome da empresa, nome e cargo de quem fala, telefone, endereco,
+  quantidade de marmitas por dia e os dias da semana.
+- Nao feche condicao comercial nem de desconto por conta propria: diga que a
+  equipe vai retornar com a proposta.
+- Depois de coletar tudo, use a tool avisar_equipe para registrar o interesse.
 
 Cardapio do dia (importante):
 - O Barracao trabalha com prato do dia: o cardapio MUDA conforme o dia da semana.

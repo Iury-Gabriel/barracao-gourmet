@@ -379,6 +379,8 @@ export default function CardapioPage() {
     numeroEntrega: "",
     tipo: "DELIVERY",
     observacoes: "",
+    trocaSalada: "",
+    alergia: "",
   });
   const [formaPagamento, setFormaPagamento] = useState<FormaPagamento>("PIX");
   const [pagamentoEntrega, setPagamentoEntrega] = useState<PagamentoEntrega>("DINHEIRO");
@@ -850,6 +852,16 @@ export default function CardapioPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           ...form,
+          // Troca de salada e alergia entram nas observacoes, que e o que a
+          // cozinha le no cupom impresso. A alergia vai em caixa alta porque
+          // no papel ela precisa saltar aos olhos.
+          observacoes: [
+            form.observacoes?.trim(),
+            form.trocaSalada?.trim() ? `Salada: ${form.trocaSalada.trim()}` : "",
+            form.alergia?.trim() ? `ALERGIA: ${form.alergia.trim()}` : "",
+          ]
+            .filter(Boolean)
+            .join(" | "),
           // O numero da casa e salvo junto com o endereco.
           enderecoEntrega: [form.enderecoEntrega.trim(), form.numeroEntrega.trim()].filter(Boolean).join(", "),
           pagamento: formaPagamento,
@@ -957,7 +969,7 @@ export default function CardapioPage() {
     setCarrinhoOpen(false);
     setPedidoConfirmado(null);
     setEtapa("carrinho");
-    setForm({ nomeCliente: "", telefoneCliente: "", emailCliente: "", cepEntrega: "", enderecoEntrega: "", numeroEntrega: "", tipo: "DELIVERY", observacoes: "" });
+    setForm({ trocaSalada: "", alergia: "", nomeCliente: "", telefoneCliente: "", emailCliente: "", cepEntrega: "", enderecoEntrega: "", numeroEntrega: "", tipo: "DELIVERY", observacoes: "" });
     setFormaPagamento("PIX");
     setPagamentoEntrega("DINHEIRO");
     setPrecisaTrocoEntrega(null);
@@ -1224,6 +1236,27 @@ export default function CardapioPage() {
                           </div>
                         </div>
                       )}
+                      <div className="space-y-1">
+                        <Label className="text-white">Trocar a salada</Label>
+                        <Input
+                          className={darkInputClass}
+                          value={form.trocaSalada}
+                          onChange={(e) => setForm((f) => ({ ...f, trocaSalada: e.target.value }))}
+                          placeholder="Ex: sem tomate, so alface"
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <Label className="text-white">Tem alguma alergia?</Label>
+                        <Input
+                          className={darkInputClass}
+                          value={form.alergia}
+                          onChange={(e) => setForm((f) => ({ ...f, alergia: e.target.value }))}
+                          placeholder="Ex: amendoim, frutos do mar"
+                        />
+                        <p className="text-[11px] text-white/50">
+                          A cozinha ve esse aviso em destaque no pedido impresso.
+                        </p>
+                      </div>
                       <div className="space-y-1"><Label className="text-white">Observações</Label><Textarea className={darkInputClass} value={form.observacoes} onChange={(e) => setForm((f) => ({ ...f, observacoes: e.target.value }))} placeholder="Alguma observação?" rows={2} /></div>
                     </div>
                     <Button

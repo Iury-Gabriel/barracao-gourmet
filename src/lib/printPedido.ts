@@ -80,6 +80,12 @@ export function montarHtmlCupom(pedido: any): string {
     ? `<div class="sec"><div class="lbl">OBS</div><div>${escapeHtml(observacoesLimpas)}</div></div>`
     : "";
 
+  // Alergia nao pode passar batido no meio das observacoes: sai em bloco proprio.
+  const alergia = (pedido?.observacoes || "").match(/ALERGIA:\s*([^|]+)/i);
+  const seloAlergia = alergia
+    ? `<div class="selo-alergia">ALERGIA<div class="selo-alergia-val">${escapeHtml(alergia[1].trim())}</div></div>`
+    : "";
+
   const pago = pedido?.statusPagamento === "PAGO";
   const troco = extrairTroco(pedido?.observacoes);
   // Quanto o entregador precisa levar de volta. So faz sentido se o cliente
@@ -127,6 +133,8 @@ export function montarHtmlCupom(pedido: any): string {
     .selo-troco-tit { font-size: 11px; font-weight: 700; letter-spacing: 1px; }
     .selo-troco-val { font-size: 20px; font-weight: 700; line-height: 1.1; }
     .selo-troco-sub { font-size: 10px; }
+    .selo-alergia { border: 3px solid #000; text-align: center; padding: 4px 2px; margin: 6px 0; font-size: 12px; font-weight: 700; letter-spacing: 1px; }
+    .selo-alergia-val { font-size: 15px; letter-spacing: 0; }
   </style></head>
   <body>
     <div class="cupom">
@@ -157,6 +165,7 @@ export function montarHtmlCupom(pedido: any): string {
       </div>
       ${seloPagamento}
       ${seloTroco}
+      ${seloAlergia}
       ${obs}
       <div class="hr"></div>
       <div class="center">Obrigado!</div>
