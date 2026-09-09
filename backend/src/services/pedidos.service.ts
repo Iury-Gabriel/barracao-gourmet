@@ -982,10 +982,22 @@ export async function alterarItensPedido(
   pedidoId: string,
   itens: Array<{ produtoId: string; quantidade: number; variacaoNome?: string }>,
   observacoes?: string,
+  entrega?: { tipo?: string; enderecoEntrega?: string; cepEntrega?: string },
 ) {
   const pedido = await prisma.pedido.findUnique({
     where: { id: pedidoId },
-    select: { id: true, numero: true, status: true, criadoEm: true, total: true, itens: true, observacoes: true },
+    select: {
+      id: true,
+      numero: true,
+      status: true,
+      criadoEm: true,
+      total: true,
+      itens: true,
+      observacoes: true,
+      tipo: true,
+      enderecoEntrega: true,
+      cepEntrega: true,
+    },
   });
   if (!pedido) throw { status: 404, message: 'Pedido nao encontrado.' };
 
@@ -1003,8 +1015,47 @@ export async function alterarItensPedido(
 
   const trocaItens = Array.isArray(itens) && itens.length > 0;
   const trocaObservacao = typeof observacoes === 'string' && observacoes.trim().length > 0;
-  if (!trocaItens && !trocaObservacao) {
-    throw { status: 400, message: 'Informe os itens novos ou a observacao do pedido.' };
+  const novoTipo = entrega?.tipo?.trim().toUpperCase();
+  const trocaTipo = Boolean(novoTipo && novoTipo !== pedido.tipo);
+  if (!trocaItens && !trocaObservacao && !trocaTipo) {
+    throw { status: 400, message: 'Informe o que muda no pedido.' };
+  }
+
+  // Trocar entre entrega e retirada muda o valor, entao o frete e refeito aqui.
+  // Sem isso o cliente que pedisse retirada e mudasse para entrega levaria a
+  // comida em casa sem pagar a taxa, e o contrario pagaria taxa sem entrega.
+  const subtotalAtual = pedido.itens.reduce((acc, i) => acc + i.subtotal, 0);
+  let freteNovo: number | null = null;
+  let enderecoNovo = pedido.enderecoEntrega;
+  let cepNovo = pedido.cepEntrega;
+
+  if (trocaTipo) {
+    if (novoTipo === 'DELIVERY') {
+      const cep = entrega?.cepEntrega?.trim() || pedido.cepEntrega;
+      if (!cep) {
+        throw { status: 400, message: 'Para mudar para entrega preciso do CEP do cliente.' };
+      }
+      const { calcularFreteCardapio } = await import('./cardapio.service');
+      const cotacao = await calcularFreteCardapio({
+        enderecoEntrega: (entrega?.enderecoEntrega || pedido.enderecoEntrega || '').trim(),
+        cepEntrega: cep,
+        subtotal: trocaItens ? undefined : subtotalAtual,
+      });
+      if (!cotacao.atende) {
+        throw {
+          status: 400,
+          message:
+            (cotacao as any).mensagemForaDeArea ||
+            'Esse endereco esta fora da nossa area de entrega.',
+        };
+      }
+      freteNovo = cotacao.frete || 0;
+      enderecoNovo = entrega?.enderecoEntrega?.trim() || pedido.enderecoEntrega;
+      cepNovo = cep;
+    } else {
+      // Virou retirada ou consumo no salao: nao ha o que cobrar de entrega.
+      freteNovo = 0;
+    }
   }
 
   // So mudou o acompanhamento: o valor nao muda, entao nao mexe em item nem
@@ -1014,7 +1065,15 @@ export async function alterarItensPedido(
       prisma.pedido.update({
         where: { id: pedidoId },
         data: {
-          observacoes: observacoes!.trim(),
+          ...(trocaObservacao ? { observacoes: observacoes!.trim() } : {}),
+          ...(trocaTipo
+            ? {
+                tipo: novoTipo!,
+                total: subtotalAtual + (freteNovo ?? 0),
+                enderecoEntrega: novoTipo === 'DELIVERY' ? enderecoNovo : null,
+                cepEntrega: novoTipo === 'DELIVERY' ? cepNovo : null,
+              }
+            : {}),
           alteradoEm: new Date(),
           impresso: false,
         },
@@ -1024,7 +1083,9 @@ export async function alterarItensPedido(
         data: {
           pedidoId,
           status: pedido.status,
-          obs: `Observacao alterada pelo cliente: ${observacoes!.trim()}`,
+          obs: trocaTipo
+            ? `Pedido alterado pelo cliente para ${novoTipo}.`
+            : `Observacao alterada pelo cliente: ${observacoes!.trim()}`,
         },
       }),
     ]);
@@ -1052,7 +1113,8 @@ export async function alterarItensPedido(
 
   const subtotal = novosItens.reduce((acc, i) => acc + i.subtotal, 0);
   // O frete ja cobrado continua valendo: o endereco nao mudou.
-  const freteAtual = Math.max(0, pedido.total - pedido.itens.reduce((acc, i) => acc + i.subtotal, 0));
+  const freteAtual =
+    freteNovo !== null ? freteNovo : Math.max(0, pedido.total - subtotalAtual);
 
   const [atualizado] = await prisma.$transaction([
     prisma.pedido.update({
@@ -1062,6 +1124,13 @@ export async function alterarItensPedido(
         alteradoEm: new Date(),
         impresso: false,
         ...(trocaObservacao ? { observacoes: observacoes!.trim() } : {}),
+        ...(trocaTipo
+          ? {
+              tipo: novoTipo!,
+              enderecoEntrega: novoTipo === 'DELIVERY' ? enderecoNovo : null,
+              cepEntrega: novoTipo === 'DELIVERY' ? cepNovo : null,
+            }
+          : {}),
         itens: { deleteMany: {}, create: novosItens },
       },
       include: { itens: { include: { produto: true } } },

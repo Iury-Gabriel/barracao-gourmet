@@ -1814,30 +1814,53 @@ function criarToolsAtendimento(
     name: 'calcular_frete_entrega',
     description: 'Calcula o frete real a partir do endereco do cliente (distancia de rota dirigindo ate a loja) e valida a area de atendimento. Nao use sozinha para responder valor total; para total use montar_resumo_pedido com itens e endereco.',
     schema: z.object({
-      enderecoEntrega: z.string().describe('Endereco completo do cliente (rua, numero, bairro)'),
+      enderecoEntrega: z
+        .string()
+        .optional()
+        .describe('Endereco completo do cliente (rua, numero, bairro). Opcional: o CEP ja localiza'),
       cepEntrega: z.string().describe('CEP do cliente (obrigatorio) — usado para localizar o endereco com precisao'),
       subtotal: z.number().optional().describe('Subtotal atual do pedido para compor o contexto do atendimento'),
     }),
     func: async ({ enderecoEntrega, cepEntrega, subtotal }) => {
       const subtotalNum = Number(subtotal || 0);
 
-      if (!enderecoEntrega?.trim()) {
-        return JSON.stringify({ erro: 'Informe o endereco completo do cliente para calcular o frete.' });
-      }
+      // O CEP sozinho ja localiza e e o que define a taxa. Exigir o endereco
+      // completo antes de calcular fazia a conversa travar pedindo rua e numero
+      // de um cliente que nem esta na area de entrega.
       if (!cepEntrega?.trim()) {
-        return JSON.stringify({ erro: 'Informe o CEP do cliente para calcular o frete com precisao.' });
+        return JSON.stringify({ erro: 'Informe o CEP do cliente para calcular o frete.' });
       }
 
       try {
         const frete = await calcularFreteCardapio({
-          enderecoEntrega: enderecoEntrega.trim(),
-          cepEntrega: cepEntrega?.trim() || undefined,
+          enderecoEntrega: (enderecoEntrega || '').trim(),
+          cepEntrega: cepEntrega.trim(),
         });
         const podeInformarTotal = Boolean(frete.atende && subtotalNum > 0);
         const totalComFrete = podeInformarTotal ? Number((subtotalNum + (frete.frete || 0)).toFixed(2)) : null;
 
+        // Frase pronta para a Linda repetir. Antes ela recebia atende=false,
+        // acimaDoLimite e motivo e tinha que montar a resposta sozinha: com um
+        // endereco a 15 km ela disse "nao consegui calcular a entrega", e a
+        // cliente ficou repetindo o endereco achando que tinha errado a digitacao.
+        const km = Number((frete as any).distanciaKm || 0).toFixed(1).replace('.', ',');
+        let mensagemParaCliente: string;
+        if (!frete.atende && (frete as any).acimaDoLimite) {
+          mensagemParaCliente =
+            `Infelizmente nao entregamos nesse endereco, ele fica a ${km} km daqui e nossa entrega vai ate 5 km. ` +
+            String((frete as any).mensagemForaDeArea || '');
+        } else if (!frete.atende) {
+          mensagemParaCliente =
+            'Nao consegui localizar esse CEP. Pode conferir o numero do CEP pra mim?';
+        } else if ((frete as any).entregaGratis) {
+          mensagemParaCliente = 'A entrega para o seu endereco fica gratis.';
+        } else {
+          mensagemParaCliente = `A taxa de entrega para o seu endereco fica ${formatBRL(frete.frete || 0)}.`;
+        }
+
         return JSON.stringify({
           ...frete,
+          mensagemParaCliente,
           subtotal: subtotalNum,
           subtotalFormatado: formatBRL(subtotalNum),
           totalComFrete,
@@ -2093,15 +2116,21 @@ Contato do cliente: ${telefoneCliente}` : '');
   const alterarPedidoWhatsapp = new DynamicStructuredTool({
     name: 'alterar_pedido',
     description:
-      'Altera um pedido ja enviado, dentro dos primeiros 10 minutos. Use para trocar itens ou para ' +
-      'mudar acompanhamento e observacao (ex: sem feijao, sem cebola, trocar legume por salada). ' +
-      'Informe o numero do pedido que o cliente recebeu.',
+      'Altera um pedido ja enviado, dentro dos primeiros 10 minutos. Use para trocar itens, para ' +
+      'mudar acompanhamento e observacao (ex: sem feijao, trocar legume por salada) e para trocar ' +
+      'entre entrega e retirada. Informe o numero do pedido que o cliente recebeu.',
     schema: z.object({
       numeroPedido: z.number().describe('Numero do pedido que o cliente recebeu, ex: 1'),
       observacoes: z
         .string()
         .optional()
         .describe('Observacao final do pedido, ja com o que o cliente pediu para mudar'),
+      tipo: z
+        .enum(['DELIVERY', 'RETIRADA'])
+        .optional()
+        .describe('So quando o cliente trocar entre entrega e retirada'),
+      cepEntrega: z.string().optional().describe('CEP, obrigatorio ao mudar para entrega'),
+      enderecoEntrega: z.string().optional().describe('Endereco completo, ao mudar para entrega'),
       itens: z
         .array(
           z.object({
@@ -2113,7 +2142,7 @@ Contato do cliente: ${telefoneCliente}` : '');
         .optional()
         .describe('So quando trocar de prato: como o pedido fica, com todos os itens'),
     }),
-    func: async ({ numeroPedido, observacoes, itens }) => {
+    func: async ({ numeroPedido, observacoes, itens, tipo, cepEntrega, enderecoEntrega }) => {
       try {
         const { acharPedidoDoClientePorNumero, alterarItensPedido } = await import('./pedidos.service');
 
@@ -2132,11 +2161,14 @@ Contato do cliente: ${telefoneCliente}` : '');
           encontrado.id,
           (itens ?? []) as any,
           observacoes,
+          { tipo, cepEntrega, enderecoEntrega },
         );
         return JSON.stringify({
           sucesso: true,
           numero: pedido.numero,
+          tipo: pedido.tipo,
           total: pedido.total,
+          totalFormatado: formatBRL(pedido.total),
           itens: pedido.itens.map((i: any) => `${i.quantidade}x ${i.produto?.nome ?? 'item'}`),
           observacoes: pedido.observacoes,
           mensagemParaCliente:
@@ -2298,6 +2330,14 @@ Alteracao de pedido:
   completa de itens que o pedido deve ter no final, nao so o que mudou.
 - Acompanhamento e pedido especial da cozinha: aceite mesmo que nao exista no
   cardapio, porque nao e um item vendido, e so uma instrucao para o preparo.
+- Se o cliente quiser trocar entre entrega e retirada, use a tool alterar_pedido
+  com o campo tipo. Nao comece um pedido novo nem peca o nome de novo.
+
+Endereco fora da area:
+- A tool calcular_frete_entrega devolve mensagemParaCliente pronta. Repita ela.
+- Endereco longe demais NAO e erro de sistema. Nunca diga "nao consegui
+  calcular": diga que nao entregamos ali e ofereca a retirada, como vem na
+  mensagem da tool.
 - Se a tool recusar por prazo, explique com gentileza que a cozinha ja comecou e
   ofereca falar com a equipe. Nunca prometa a alteracao sem a tool confirmar.
 
