@@ -1046,7 +1046,11 @@ descricao:`,
 
 // ===== TOOLS DE ATENDIMENTO =====
 
-function criarToolsAtendimento(contexto: { mensagensUsuarioRecentes: string[] } = { mensagensUsuarioRecentes: [] }) {
+function criarToolsAtendimento(
+  contexto: { mensagensUsuarioRecentes: string[]; telefoneCliente?: string } = {
+    mensagensUsuarioRecentes: [],
+  },
+) {
   const historicoUsuario = contexto.mensagensUsuarioRecentes.filter(Boolean).join('\n');
 
   const consultarCatalogoProdutos = new DynamicStructuredTool({
@@ -2080,13 +2084,24 @@ Contato do cliente: ${telefoneCliente}` : '');
 
   // Janela curta para o cliente se corrigir sozinho, sem ocupar a equipe.
   // Passado o prazo a comida ja esta sendo feita, e ai o caso vira humano.
+  // O cliente e a Linda so conhecem o NUMERO do pedido, nunca o id interno. Na
+  // primeira versao a tool pedia o id e ela mandava o numero, entao a alteracao
+  // falhava com "nao consegui localizar o pedido" mesmo com o pedido na tela.
+  //
+  // E numa marmitaria a alteracao mais comum nem troca prato: e acompanhamento
+  // ("sem feijao", "no lugar do legume poe salada"). Por isso itens e opcional.
   const alterarPedidoWhatsapp = new DynamicStructuredTool({
     name: 'alterar_pedido',
     description:
-      'Troca os itens de um pedido ja enviado, dentro dos primeiros 10 minutos. ' +
-      'Informe a lista completa de itens que o pedido deve passar a ter, nao so o que mudou.',
+      'Altera um pedido ja enviado, dentro dos primeiros 10 minutos. Use para trocar itens ou para ' +
+      'mudar acompanhamento e observacao (ex: sem feijao, sem cebola, trocar legume por salada). ' +
+      'Informe o numero do pedido que o cliente recebeu.',
     schema: z.object({
-      pedidoId: z.string().describe('Id do pedido que o cliente quer mudar'),
+      numeroPedido: z.number().describe('Numero do pedido que o cliente recebeu, ex: 1'),
+      observacoes: z
+        .string()
+        .optional()
+        .describe('Observacao final do pedido, ja com o que o cliente pediu para mudar'),
       itens: z
         .array(
           z.object({
@@ -2095,17 +2110,35 @@ Contato do cliente: ${telefoneCliente}` : '');
             variacaoNome: z.string().optional(),
           }),
         )
-        .describe('Como o pedido fica depois da mudanca, com todos os itens'),
+        .optional()
+        .describe('So quando trocar de prato: como o pedido fica, com todos os itens'),
     }),
-    func: async ({ pedidoId, itens }) => {
+    func: async ({ numeroPedido, observacoes, itens }) => {
       try {
-        const { alterarItensPedido } = await import('./pedidos.service');
-        const pedido = await alterarItensPedido(pedidoId, itens as any);
+        const { acharPedidoDoClientePorNumero, alterarItensPedido } = await import('./pedidos.service');
+
+        const encontrado = await acharPedidoDoClientePorNumero(
+          Number(numeroPedido),
+          contexto.telefoneCliente || '',
+        );
+        if (!encontrado) {
+          return JSON.stringify({
+            sucesso: false,
+            erro: `Nao achei o pedido numero ${numeroPedido} em aberto neste telefone.`,
+          });
+        }
+
+        const pedido = await alterarItensPedido(
+          encontrado.id,
+          (itens ?? []) as any,
+          observacoes,
+        );
         return JSON.stringify({
           sucesso: true,
           numero: pedido.numero,
           total: pedido.total,
           itens: pedido.itens.map((i: any) => `${i.quantidade}x ${i.produto?.nome ?? 'item'}`),
+          observacoes: pedido.observacoes,
           mensagemParaCliente:
             'Alterei seu pedido e a cozinha ja foi avisada da mudanca. Confere se ficou certo.',
         });
@@ -2258,7 +2291,13 @@ Cliente que ja pediu antes:
 
 Alteracao de pedido:
 - O cliente pode mudar o pedido nos primeiros 10 minutos, usando a tool alterar_pedido.
-- Passe a lista completa de itens que o pedido deve ter no final, nao so o que mudou.
+- Informe o NUMERO do pedido que ele recebeu (ex: 1). Voce nunca tem o id interno.
+- Mudanca de acompanhamento (sem feijao, sem cebola, trocar legume por salada) vai
+  no campo observacoes, escrito por extenso. Nao precisa mexer nos itens.
+- So use o campo itens quando ele trocar de prato mesmo. Nesse caso passe a lista
+  completa de itens que o pedido deve ter no final, nao so o que mudou.
+- Acompanhamento e pedido especial da cozinha: aceite mesmo que nao exista no
+  cardapio, porque nao e um item vendido, e so uma instrucao para o preparo.
 - Se a tool recusar por prazo, explique com gentileza que a cozinha ja comecou e
   ofereca falar com a equipe. Nunca prometa a alteracao sem a tool confirmar.
 
@@ -2587,6 +2626,9 @@ export async function gerarRespostaIA(params: {
     ? criarToolsGestao()
     : criarToolsAtendimento({
         mensagensUsuarioRecentes: [...historico.map((mensagemHistorico) => mensagemHistorico.conteudo), mensagem],
+        // Sem o telefone a tool nao consegue achar o pedido pelo numero, e
+        // qualquer um alteraria o pedido de outro chutando o numero.
+        telefoneCliente: remetente,
       });
 
   const toolMap = new Map<string, any>(tools.map(t => [t.name, t]));

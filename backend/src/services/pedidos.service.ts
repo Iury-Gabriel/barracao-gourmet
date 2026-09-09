@@ -952,13 +952,40 @@ export const MINUTOS_PARA_ALTERAR_PEDIDO = 10;
  * Marca alteradoEm e zera impresso, que e o que faz a impressao automatica
  * soltar um cupom novo avisando a cozinha de que o papel anterior nao vale.
  */
+/**
+ * Acha o pedido pelo numero que o cliente conhece.
+ *
+ * O cliente e a Linda so tem o numero do pedido ("pedido numero 1"), nunca o id
+ * interno. Como a numeracao reinicia todo dia, o numero sozinho e ambiguo: a
+ * busca e do dia corrente e restrita ao telefone de quem esta falando, senao um
+ * cliente conseguiria alterar o pedido de outro so chutando o numero.
+ */
+export async function acharPedidoDoClientePorNumero(numeroPedido: number, telefoneCliente: string) {
+  const digitos = String(telefoneCliente || '').replace(/\D/g, '').slice(-8);
+  if (!digitos) return null;
+
+  return prisma.pedido.findFirst({
+    where: {
+      numero: numeroPedido,
+      status: { notIn: ['ENTREGUE', 'CANCELADO'] },
+      OR: [
+        { telefoneCliente: { contains: digitos } },
+        { cliente: { telefone: { contains: digitos } } },
+      ],
+    },
+    orderBy: { criadoEm: 'desc' },
+    select: { id: true },
+  });
+}
+
 export async function alterarItensPedido(
   pedidoId: string,
   itens: Array<{ produtoId: string; quantidade: number; variacaoNome?: string }>,
+  observacoes?: string,
 ) {
   const pedido = await prisma.pedido.findUnique({
     where: { id: pedidoId },
-    select: { id: true, numero: true, status: true, criadoEm: true, total: true, itens: true },
+    select: { id: true, numero: true, status: true, criadoEm: true, total: true, itens: true, observacoes: true },
   });
   if (!pedido) throw { status: 404, message: 'Pedido nao encontrado.' };
 
@@ -974,8 +1001,34 @@ export async function alterarItensPedido(
     };
   }
 
-  if (!Array.isArray(itens) || itens.length === 0) {
-    throw { status: 400, message: 'Informe ao menos um item.' };
+  const trocaItens = Array.isArray(itens) && itens.length > 0;
+  const trocaObservacao = typeof observacoes === 'string' && observacoes.trim().length > 0;
+  if (!trocaItens && !trocaObservacao) {
+    throw { status: 400, message: 'Informe os itens novos ou a observacao do pedido.' };
+  }
+
+  // So mudou o acompanhamento: o valor nao muda, entao nao mexe em item nem
+  // recalcula total. So marca a alteracao para a cozinha ver o papel novo.
+  if (!trocaItens) {
+    const [atualizadoObs] = await prisma.$transaction([
+      prisma.pedido.update({
+        where: { id: pedidoId },
+        data: {
+          observacoes: observacoes!.trim(),
+          alteradoEm: new Date(),
+          impresso: false,
+        },
+        include: { itens: { include: { produto: true } } },
+      }),
+      prisma.historicoPedido.create({
+        data: {
+          pedidoId,
+          status: pedido.status,
+          obs: `Observacao alterada pelo cliente: ${observacoes!.trim()}`,
+        },
+      }),
+    ]);
+    return atualizadoObs;
   }
 
   const produtos = await prisma.produto.findMany({
@@ -1008,6 +1061,7 @@ export async function alterarItensPedido(
         total: subtotal + freteAtual,
         alteradoEm: new Date(),
         impresso: false,
+        ...(trocaObservacao ? { observacoes: observacoes!.trim() } : {}),
         itens: { deleteMany: {}, create: novosItens },
       },
       include: { itens: { include: { produto: true } } },
