@@ -303,6 +303,25 @@ export async function enqueueWebhookMessage(payload: {
   try {
     await connectRedisIfNeeded();
     redisOperational = true;
+
+    // A mesma mensagem pode chegar duas vezes: o provedor reentrega quando fica
+    // em duvida se recebemos, e o webhook responde 200 antes de processar, entao
+    // ele nao tem como saber. Sem esta trava a Linda respondia duas vezes a
+    // mesma coisa, e foi o que a dona viu ao confirmar o pedido e ao ser
+    // transferida para atendente.
+    if (payload.metaMessageId) {
+      const chaveVista = `webhook:msg:${payload.metaMessageId}`;
+      const primeiraVez = await redis.set(chaveVista, '1', { NX: true, EX: 600 });
+      if (!primeiraVez) {
+        console.log('[webhook-debounce] mensagem repetida ignorada', {
+          metaMessageId: payload.metaMessageId,
+          remetente: payload.remetente,
+        });
+        // true porque nao houve falha: a mensagem ja esta sendo tratada.
+        return true;
+      }
+    }
+
     const convKey = conversationKey(payload);
     const dueAt = Date.now() + DEBOUNCE_MS;
 
