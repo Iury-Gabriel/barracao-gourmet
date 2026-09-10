@@ -810,6 +810,23 @@ export async function criarPedidoCardapio(data: {
   const infoMercadoPago = mercadoPagoCheckout
     ? `Mercado Pago order_id=${mercadoPagoCheckout.orderId}; payment_id=${mercadoPagoCheckout.paymentId}.`
     : '';
+  // Carne ou prato pedido "no lugar do acompanhamento" e item de venda, nao
+  // guarnicao. Sem esta recusa o pedido saia com bisteca de R$ 22 de graca,
+  // porque a observacao aceita texto livre e ninguem confere o que entrou nela.
+  const cobraveis = await produtosCobraveisNaObservacao(
+    observacoesBase,
+    data.itens.map((i) => i.produtoId),
+  );
+  if (cobraveis.length > 0) {
+    const lista = cobraveis.map((p) => `${p.nome} (R$ ${p.preco.toFixed(2)})`).join(', ');
+    throw {
+      status: 400,
+      message:
+        `${lista} e item do cardapio, nao acompanhamento. ` +
+        'Inclua como item do pedido para cobrar o valor, ou tire da observacao.',
+    };
+  }
+
   const observacoesFinal = [observacoesBase, infoFrete, infoTroco, infoCartao, infoMercadoPago].filter(Boolean).join(' | ') || undefined;
 
   const pedido = await prisma.pedido.create({
@@ -1144,4 +1161,50 @@ export async function empresaDoRequest(authorization?: string): Promise<string |
   } catch {
     return null;
   }
+}
+
+/**
+ * Produtos do cardapio citados na observacao que NAO estao no pedido.
+ *
+ * Existe porque a Linda passou a aceitar qualquer troca de acompanhamento como
+ * instrucao de preparo, e um cliente pediu "tirar os legumes e colocar bisteca":
+ * bisteca e prato de R$ 22, e o pedido saiu por R$ 27, o preco do churrasco
+ * sozinho. Acompanhamento (arroz, feijao, batata, legumes, farofa, salada) nao
+ * tem custo; carne e prato tem, e precisam entrar como item.
+ *
+ * Ignora o que ja esta no pedido, senao "churrasco sem legumes" acusaria o
+ * proprio churrasco, e ignora mencao de remocao ("sem bisteca").
+ */
+// Mesma normalizacao usada na busca do catalogo: minusculas e sem acento.
+function normalizarTextoObservacao(texto: string) {
+  return String(texto || '')
+    .normalize('NFD')
+    .replace(/[̀-ͯ]/g, '')
+    .toLowerCase()
+    .trim();
+}
+
+export async function produtosCobraveisNaObservacao(
+  observacoes: string | null | undefined,
+  produtoIdsNoPedido: string[],
+) {
+  const texto = normalizarTextoObservacao(String(observacoes || ''));
+  if (!texto) return [];
+
+  const produtos = await prisma.produto.findMany({
+    where: { vendavel: true, disponivel: true, id: { notIn: produtoIdsNoPedido } },
+    select: { id: true, nome: true, preco: true },
+  });
+
+  return produtos.filter((produto) => {
+    const nome = normalizarTextoObservacao(produto.nome);
+    // Nome curto demais casa dentro de outra palavra e acusa errado.
+    if (nome.length < 4) return false;
+    const posicao = texto.indexOf(nome);
+    if (posicao < 0) return false;
+
+    // "sem bisteca" ou "tirar a bisteca" e remocao, nao adicao.
+    const antes = texto.slice(Math.max(0, posicao - 22), posicao);
+    return !/(sem|tirar|tira|retirar|remove|remover|nao quero|nao coloca)\s*(o|a|os|as)?\s*$/.test(antes);
+  });
 }

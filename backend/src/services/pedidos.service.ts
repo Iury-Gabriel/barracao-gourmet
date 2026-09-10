@@ -1015,6 +1015,25 @@ export async function alterarItensPedido(
 
   const trocaItens = Array.isArray(itens) && itens.length > 0;
   const trocaObservacao = typeof observacoes === 'string' && observacoes.trim().length > 0;
+
+  // A observacao aceita texto livre, e foi por ela que passou uma bisteca de
+  // R$ 22 como se fosse troca de guarnicao. Prato citado ali tem que virar item.
+  if (trocaObservacao) {
+    const { produtosCobraveisNaObservacao } = await import('./cardapio.service');
+    const idsNoPedido = trocaItens
+      ? itens.map((i) => i.produtoId)
+      : pedido.itens.map((i) => i.produtoId);
+    const cobraveis = await produtosCobraveisNaObservacao(observacoes, idsNoPedido);
+    if (cobraveis.length > 0) {
+      const lista = cobraveis.map((p) => `${p.nome} (R$ ${p.preco.toFixed(2)})`).join(', ');
+      throw {
+        status: 400,
+        message:
+          `${lista} e item do cardapio, nao acompanhamento. ` +
+          'Inclua como item do pedido para cobrar o valor, ou tire da observacao.',
+      };
+    }
+  }
   const novoTipo = entrega?.tipo?.trim().toUpperCase();
   const trocaTipo = Boolean(novoTipo && novoTipo !== pedido.tipo);
   if (!trocaItens && !trocaObservacao && !trocaTipo) {
