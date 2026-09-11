@@ -7,6 +7,25 @@ import { uploadsDir } from '../lib/uploads';
 import { buildPublicUrl } from '../lib/url';
 import { notificarErroCritico } from '../lib/alertas';
 
+/**
+ * Token efetivo do Mercado Pago.
+ *
+ * Antes vinha fixo do .env. Agora a loja conecta a propria conta pelo botao
+ * "Conectar Mercado Pago" (OAuth) e o token fica no banco; este modulo guarda o
+ * valor em memoria para nao bater no banco a cada chamada. Quem atualiza e o
+ * mercado-pago-oauth.service (no boot, ao conectar/desconectar e ao renovar).
+ * Sem conexao, cai no token do .env (retrocompativel).
+ */
+let tokenEmMemoria = config.mercadoPagoAccessToken;
+
+export function definirAccessTokenMercadoPago(token?: string | null) {
+  tokenEmMemoria = String(token || '').trim() || config.mercadoPagoAccessToken;
+}
+
+function accessToken() {
+  return tokenEmMemoria;
+}
+
 function onlyDigits(value?: string) {
   return String(value || '').replace(/\D/g, '');
 }
@@ -245,7 +264,7 @@ function extractMercadoPagoOrderSnapshot(orderResponse: any, fallbackReference?:
 }
 
 export function isMercadoPagoConfigured() {
-  return Boolean(config.mercadoPagoAccessToken);
+  return Boolean(accessToken());
 }
 
 export function getMercadoPagoWebhookUrl() {
@@ -279,7 +298,7 @@ export async function buscarCustomerMercadoPago(email: string): Promise<string |
   if (!isMercadoPagoConfigured() || !mail) return null;
   try {
     const res = await fetch(`${config.mercadoPagoApiBaseUrl}/v1/customers/search?email=${encodeURIComponent(mail)}`, {
-      headers: { Authorization: `Bearer ${config.mercadoPagoAccessToken}` },
+      headers: { Authorization: `Bearer ${accessToken()}` },
     });
     if (!res.ok) return null;
     const data: any = await res.json().catch(() => null);
@@ -300,7 +319,7 @@ export async function buscarOuCriarCustomerMercadoPago(email: string, nome?: str
   try {
     const res = await fetch(`${config.mercadoPagoApiBaseUrl}/v1/customers`, {
       method: 'POST',
-      headers: { Authorization: `Bearer ${config.mercadoPagoAccessToken}`, 'Content-Type': 'application/json' },
+      headers: { Authorization: `Bearer ${accessToken()}`, 'Content-Type': 'application/json' },
       body: JSON.stringify({ email: mail, ...(nome ? { first_name: nome } : {}) }),
     });
     const data: any = await res.json().catch(() => null);
@@ -319,7 +338,7 @@ export async function salvarCartaoNoCustomer(customerId: string, token: string):
   try {
     const res = await fetch(`${config.mercadoPagoApiBaseUrl}/v1/customers/${customerId}/cards`, {
       method: 'POST',
-      headers: { Authorization: `Bearer ${config.mercadoPagoAccessToken}`, 'Content-Type': 'application/json' },
+      headers: { Authorization: `Bearer ${accessToken()}`, 'Content-Type': 'application/json' },
       body: JSON.stringify({ token }),
     });
     const data: any = await res.json().catch(() => null);
@@ -340,7 +359,7 @@ export async function listarCartoesCustomerMercadoPago(customerId: string) {
   if (!isMercadoPagoConfigured() || !customerId) return [];
   try {
     const res = await fetch(`${config.mercadoPagoApiBaseUrl}/v1/customers/${customerId}/cards`, {
-      headers: { Authorization: `Bearer ${config.mercadoPagoAccessToken}` },
+      headers: { Authorization: `Bearer ${accessToken()}` },
     });
     if (!res.ok) return [];
     const data: any = await res.json().catch(() => []);
@@ -403,7 +422,7 @@ export async function criarPagamentoCartaoMercadoPago(input: {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      Authorization: `Bearer ${config.mercadoPagoAccessToken}`,
+      Authorization: `Bearer ${accessToken()}`,
       'X-Idempotency-Key': crypto.randomUUID(),
     },
     body: JSON.stringify(body),
@@ -449,7 +468,7 @@ export async function criarCobrancaPixMercadoPago(input: {
   descricao: string;
   externalReference: string;
 }) {
-  if (!config.mercadoPagoAccessToken) {
+  if (!accessToken()) {
     throw {
       status: 500,
       message: 'Integracao Mercado Pago nao configurada. Defina MERCADO_PAGO_ACCESS_TOKEN.',
@@ -492,7 +511,7 @@ export async function criarCobrancaPixMercadoPago(input: {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      'Authorization': `Bearer ${config.mercadoPagoAccessToken}`,
+      'Authorization': `Bearer ${accessToken()}`,
       'X-Idempotency-Key': idempotencyKey,
     },
     body: JSON.stringify({
@@ -577,7 +596,7 @@ export async function criarCobrancaPixMercadoPago(input: {
 }
 
 export async function consultarCobrancaMercadoPago(orderId: string) {
-  if (!config.mercadoPagoAccessToken) {
+  if (!accessToken()) {
     throw {
       status: 500,
       message: 'Integracao Mercado Pago nao configurada. Defina MERCADO_PAGO_ACCESS_TOKEN.',
@@ -588,7 +607,7 @@ export async function consultarCobrancaMercadoPago(orderId: string) {
     method: 'GET',
     headers: {
       'Content-Type': 'application/json',
-      'Authorization': `Bearer ${config.mercadoPagoAccessToken}`,
+      'Authorization': `Bearer ${accessToken()}`,
     },
   });
 
@@ -629,7 +648,7 @@ export async function consultarCobrancaMercadoPago(orderId: string) {
 }
 
 export async function consultarPagamentoMercadoPago(paymentId: string) {
-  if (!config.mercadoPagoAccessToken) {
+  if (!accessToken()) {
     throw {
       status: 500,
       message: 'Integracao Mercado Pago nao configurada. Defina MERCADO_PAGO_ACCESS_TOKEN.',
@@ -640,7 +659,7 @@ export async function consultarPagamentoMercadoPago(paymentId: string) {
     method: 'GET',
     headers: {
       'Content-Type': 'application/json',
-      'Authorization': `Bearer ${config.mercadoPagoAccessToken}`,
+      'Authorization': `Bearer ${accessToken()}`,
     },
   });
 
@@ -694,7 +713,7 @@ export async function gerarQrCodePix(input: {
  * pelo sistema, alguem vai ter que fazer pelo painel deles.
  */
 export async function estornarPagamentoMercadoPago(paymentId: string, valor?: number) {
-  if (!config.mercadoPagoAccessToken) {
+  if (!accessToken()) {
     throw {
       status: 500,
       message: 'Integracao Mercado Pago nao configurada. Defina MERCADO_PAGO_ACCESS_TOKEN.',
@@ -707,7 +726,7 @@ export async function estornarPagamentoMercadoPago(paymentId: string, valor?: nu
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      'Authorization': `Bearer ${config.mercadoPagoAccessToken}`,
+      'Authorization': `Bearer ${accessToken()}`,
       // Evita estornar duas vezes se a tela for clicada de novo ou a rede cair
       // no meio: a mesma chave devolve o mesmo estorno em vez de criar outro.
       'X-Idempotency-Key': `refund-${paymentId}-${valor ? valor.toFixed(2) : 'total'}`,

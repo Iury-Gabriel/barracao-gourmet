@@ -37,6 +37,15 @@ export const config = {
   mercadoPagoAccessToken: process.env.MERCADO_PAGO_ACCESS_TOKEN || '',
   mercadoPagoPixExpirationMinutes: Number(process.env.MERCADO_PAGO_PIX_EXPIRATION_MINUTES || 30),
   mercadoPagoWebhookSecret: process.env.MERCADO_PAGO_WEBHOOK_SECRET || '',
+  // OAuth "Conectar Mercado Pago": o aplicativo da plataforma faz a ponte e a
+  // loja so autoriza. O token retornado e da conta DELA (o dinheiro cai la).
+  mercadoPagoClientId: process.env.MERCADO_PAGO_CLIENT_ID || '',
+  mercadoPagoClientSecret: process.env.MERCADO_PAGO_CLIENT_SECRET || '',
+  mercadoPagoOauthRedirectUri:
+    process.env.MERCADO_PAGO_OAUTH_REDIRECT_URI ||
+    'https://api-barracao.86-48-19-98.sslip.io/api/mercado-pago/oauth/callback',
+  // Para onde devolver o navegador depois de conectar.
+  painelBaseUrl: (process.env.PAINEL_BASE_URL || 'https://barracao.86-48-19-98.sslip.io').replace(/\/$/, ''),
   // OpenRouteService (geocodificacao + rota dirigindo para calculo de frete)
   // Valores padrao ja embutidos; o .env pode sobrescrever se necessario.
   openRouteServiceApiKey:

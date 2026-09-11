@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/contexts/AuthContext";
@@ -33,6 +33,7 @@ export default function ConfiguracoesPage() {
           {currentUser?.perfil === "ADMIN" && <TabsTrigger value="entregadores">Entregadores</TabsTrigger>}
           {currentUser?.perfil === "ADMIN" && <TabsTrigger value="cardapio">Cardápio</TabsTrigger>}
           {currentUser?.perfil === "ADMIN" && <TabsTrigger value="loja">Loja</TabsTrigger>}
+          {currentUser?.perfil === "ADMIN" && <TabsTrigger value="pagamentos">Pagamentos</TabsTrigger>}
           {currentUser?.perfil === "ADMIN" && <TabsTrigger value="cupons">Cupons</TabsTrigger>}
           {currentUser?.perfil === "ADMIN" && <TabsTrigger value="ia">Agentes IA</TabsTrigger>}
           {currentUser?.perfil === "ADMIN" && <TabsTrigger value="openai">Chave OpenAI</TabsTrigger>}
@@ -42,6 +43,7 @@ export default function ConfiguracoesPage() {
         {currentUser?.perfil === "ADMIN" && <TabsContent value="entregadores" className="mt-4"><EntregadoresTab /></TabsContent>}
         {currentUser?.perfil === "ADMIN" && <TabsContent value="cardapio" className="mt-4"><CardapioConfigTab /></TabsContent>}
         {currentUser?.perfil === "ADMIN" && <TabsContent value="loja" className="mt-4"><LojaTab /></TabsContent>}
+        {currentUser?.perfil === "ADMIN" && <TabsContent value="pagamentos" className="mt-4"><PagamentosTab /></TabsContent>}
         {currentUser?.perfil === "ADMIN" && <TabsContent value="cupons" className="mt-4"><CuponsTab /></TabsContent>}
         {currentUser?.perfil === "ADMIN" && <TabsContent value="ia" className="mt-4"><AgentesIATab /></TabsContent>}
         {currentUser?.perfil === "ADMIN" && <TabsContent value="openai" className="mt-4"><OpenAIConfigTab /></TabsContent>}
@@ -1183,6 +1185,121 @@ function LojaTab() {
 }
 
 // ===== ABA CUPONS =====
+/**
+ * Conexão do Mercado Pago. A loja clica em conectar, autoriza na conta dela e o
+ * sistema guarda o token sozinho: não precisa copiar credencial nem configurar
+ * webhook (o webhook é do aplicativo e vale para todas as contas conectadas).
+ */
+function PagamentosTab() {
+  const queryClient = useQueryClient();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [conectando, setConectando] = useState(false);
+
+  const { data: status, isLoading } = useQuery({
+    queryKey: ["mercado-pago-status"],
+    queryFn: () => api.get<{ conectado: boolean; userId?: string | null; expiraEm?: string | null; usandoTokenDoServidor?: boolean }>("/api/mercado-pago/status"),
+  });
+
+  // Volta do Mercado Pago com ?mp=ok|erro
+  useEffect(() => {
+    const mp = searchParams.get("mp");
+    if (!mp) return;
+    if (mp === "ok") toast.success("Mercado Pago conectado com sucesso!");
+    else toast.error("Não foi possível conectar o Mercado Pago. Tente de novo.");
+    queryClient.invalidateQueries({ queryKey: ["mercado-pago-status"] });
+    searchParams.delete("mp");
+    setSearchParams(searchParams, { replace: true });
+  }, [searchParams, setSearchParams, queryClient]);
+
+  async function conectar() {
+    setConectando(true);
+    try {
+      const { url } = await api.get<{ url: string }>("/api/mercado-pago/conectar");
+      window.location.href = url;
+    } catch (e: any) {
+      toast.error(e.message || "Não foi possível iniciar a conexão.");
+      setConectando(false);
+    }
+  }
+
+  const desconectar = useMutation({
+    mutationFn: () => api.post("/api/mercado-pago/desconectar", {}),
+    onSuccess: () => {
+      toast.success("Mercado Pago desconectado.");
+      queryClient.invalidateQueries({ queryKey: ["mercado-pago-status"] });
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="text-base flex items-center gap-2">
+          <LinkIcon className="h-4 w-4 text-primary" /> Mercado Pago
+        </CardTitle>
+        <CardDescription>
+          Conecte a conta do Mercado Pago da casa para o cardápio gerar PIX e cartão. O dinheiro cai
+          direto na sua conta.
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        {isLoading ? (
+          <p className="text-sm text-muted-foreground">Carregando...</p>
+        ) : status?.conectado ? (
+          <div className="rounded-xl border p-4 space-y-3">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div className="flex items-center gap-2 text-sm">
+                <span className="flex h-2.5 w-2.5 rounded-full bg-emerald-500" />
+                <span className="font-medium text-emerald-700 dark:text-emerald-300">Conta conectada</span>
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  if (confirm("Desconectar o Mercado Pago? O cardápio para de gerar PIX até reconectar.")) {
+                    desconectar.mutate();
+                  }
+                }}
+                disabled={desconectar.isPending}
+              >
+                Desconectar
+              </Button>
+            </div>
+            <div className="text-xs text-muted-foreground space-y-0.5">
+              {status.userId && <p>Conta Mercado Pago: {status.userId}</p>}
+              {status.expiraEm && (
+                <p>
+                  Token válido até {new Date(status.expiraEm).toLocaleDateString("pt-BR")} (renova sozinho)
+                </p>
+              )}
+            </div>
+          </div>
+        ) : (
+          <div className="rounded-xl border p-4">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div>
+                <p className="text-sm font-medium">Conecte sua conta Mercado Pago</p>
+                <p className="text-xs text-muted-foreground">
+                  Você faz login e autoriza. Sem copiar token, sem configurar webhook.
+                </p>
+              </div>
+              <Button onClick={conectar} disabled={conectando} className="shrink-0">
+                <LinkIcon className="mr-2 h-4 w-4" /> {conectando ? "Abrindo..." : "Conectar Mercado Pago"}
+              </Button>
+            </div>
+            {status?.usandoTokenDoServidor && (
+              <p className="mt-3 text-xs text-amber-600 dark:text-amber-400">
+                Hoje os pagamentos usam o token configurado no servidor. Ao conectar, passa a usar a
+                conta que você autorizar.
+              </p>
+            )}
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
 const DIAS_SEMANA_LABEL = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"];
 const TIPOS_PEDIDO_OPCOES: { value: string; label: string }[] = [
   { value: "DELIVERY", label: "Delivery" },

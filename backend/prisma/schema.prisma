@@ -303,6 +303,15 @@ model ConfiguracaoLoja {
   horaFechamento  String   @default("15:00")
   // 0=domingo .. 6=sabado. A casa abre de segunda a sabado.
   diasFuncionamento Int[]  @default([1, 2, 3, 4, 5, 6])
+
+  // Conexao do Mercado Pago via OAuth ("Conectar Mercado Pago"). Enquanto nao
+  // houver conexao, o sistema cai no MERCADO_PAGO_ACCESS_TOKEN do .env.
+  mercadoPagoAccessToken   String?
+  mercadoPagoRefreshToken  String?
+  mercadoPagoUserId        String?
+  mercadoPagoPublicKey     String?
+  mercadoPagoTokenExpiraEm DateTime?
+
   criadoEm        DateTime @default(now())
   atualizadoEm    DateTime @updatedAt
 

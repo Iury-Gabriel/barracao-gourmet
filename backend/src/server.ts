@@ -22,6 +22,8 @@ import atendimentosRoutes from './routes/atendimentos.routes';
 import reservasRoutes from './routes/reservas.routes';
 import entregasRoutes from './routes/entregas.routes';
 import lojaRoutes from './routes/loja.routes';
+import mercadoPagoRoutes from './routes/mercado-pago.routes';
+import { sincronizarToken as sincronizarTokenMercadoPago } from './services/mercado-pago-oauth.service';
 import cuponsRoutes from './routes/cupons.routes';
 import { getMercadoPagoWebhookUrl } from './services/mercado-pago.service';
 
@@ -78,6 +80,7 @@ app.use('/api/ia', iaRoutes);
 app.use('/api/webhook', webhookRoutes);
 app.use('/api/atendimentos', atendimentosRoutes);
 app.use('/api/loja', lojaRoutes);
+app.use('/api/mercado-pago', mercadoPagoRoutes);
 app.use('/api/cupons', cuponsRoutes);
 app.use('/api/reservas', reservasRoutes);
 app.use('/api/entregas', entregasRoutes);
@@ -101,6 +104,11 @@ app.listen(config.port, () => {
   console.log(`   Health: http://localhost:${config.port}/api/health`);
   console.log(`   Uploads: ${config.publicBaseUrl}/uploads/`);
   console.log(`   Mercado Pago Webhook: ${getMercadoPagoWebhookUrl()}`);
+
+  // Carrega o token do Mercado Pago conectado (e renova se estiver vencendo).
+  // Repete a cada 12h para o token nunca expirar sem ninguem perceber.
+  sincronizarTokenMercadoPago();
+  setInterval(sincronizarTokenMercadoPago, 12 * 60 * 60 * 1000);
 });
 
 export default app;
