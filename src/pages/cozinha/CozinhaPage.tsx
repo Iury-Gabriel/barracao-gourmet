@@ -44,6 +44,13 @@ const TIPO_LABEL: Record<string, string> = {
   LOCAL: "Salao",
 };
 
+function formatarEspera(minutos: number) {
+  if (minutos < 60) return `${minutos} min`;
+  const horas = Math.floor(minutos / 60);
+  const resto = minutos % 60;
+  return resto ? `${horas}h${String(resto).padStart(2, '0')}` : `${horas}h`;
+}
+
 function minutosDesde(iso: string) {
   const inicio = new Date(iso).getTime();
   if (Number.isNaN(inicio)) return 0;
@@ -107,26 +114,26 @@ export default function CozinhaPage() {
   const producao = data?.producao ?? [];
 
   return (
-    <div className="min-h-screen bg-background p-4">
+    <div className="min-h-screen bg-background p-3">
       <header className="mb-4 flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-3">
-          <ChefHat className="h-8 w-8" />
+          <ChefHat className="h-6 w-6" />
           <div>
-            <h1 className="text-2xl font-bold leading-tight">Cozinha</h1>
+            <h1 className="text-xl font-bold leading-tight">Cozinha</h1>
             <p className="text-sm text-muted-foreground">
               {pedidos.filter((p) => p.status !== "PRONTO").length} pedido(s) na fila
             </p>
           </div>
         </div>
-        <Button variant="outline" size="lg" onClick={() => refetch()} className="gap-2">
-          <RefreshCw className={`h-5 w-5 ${isFetching ? "animate-spin" : ""}`} />
+        <Button variant="outline" size="sm" onClick={() => refetch()} className="gap-2">
+          <RefreshCw className={`h-4 w-4 ${isFetching ? "animate-spin" : ""}`} />
           Atualizar
         </Button>
       </header>
 
       {/* O que a cozinha mais precisa: quanto falta de cada prato, somado. */}
       {producao.length > 0 && (
-        <div className="mb-4 rounded-xl border bg-card p-4">
+        <div className="mb-3 rounded-lg border bg-card p-3">
           <p className="mb-2 text-sm font-semibold uppercase tracking-wide text-muted-foreground">
             Falta produzir
           </p>
@@ -134,10 +141,10 @@ export default function CozinhaPage() {
             {producao.map((item) => (
               <div
                 key={item.nome}
-                className="flex items-baseline gap-2 rounded-lg border bg-background px-3 py-2"
+                className="flex items-baseline gap-1.5 rounded border bg-background px-2 py-1"
               >
-                <span className="text-2xl font-bold tabular-nums">{item.quantidade}</span>
-                <span className="text-base">{item.nome}</span>
+                <span className="text-lg font-bold tabular-nums">{item.quantidade}</span>
+                <span className="text-sm">{item.nome}</span>
               </div>
             ))}
           </div>
@@ -147,14 +154,14 @@ export default function CozinhaPage() {
       {isLoading ? (
         <p className="py-16 text-center text-lg text-muted-foreground">Carregando...</p>
       ) : (
-        <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
+        <div className="grid grid-cols-1 gap-3 md:grid-cols-2 lg:grid-cols-3">
           {COLUNAS.map((coluna) => {
             const daColuna = pedidos.filter((p) => p.status === coluna.status);
             return (
-              <section key={coluna.status} className="rounded-xl border bg-card/40 p-3">
-                <h2 className="mb-3 flex items-center justify-between text-lg font-bold">
+              <section key={coluna.status} className="rounded-lg border bg-card/40 p-2">
+                <h2 className="mb-2 flex items-center justify-between text-base font-bold">
                   {coluna.titulo}
-                  <span className="rounded-full bg-muted px-3 py-0.5 text-base tabular-nums">
+                  <span className="rounded-full bg-muted px-2 py-0.5 text-sm tabular-nums">
                     {daColuna.length}
                   </span>
                 </h2>
@@ -162,7 +169,7 @@ export default function CozinhaPage() {
                 {daColuna.length === 0 ? (
                   <p className="py-8 text-center text-sm text-muted-foreground">Nada aqui</p>
                 ) : (
-                  <div className="space-y-3">
+                  <div className="space-y-2">
                     {daColuna.map((pedido) => {
                       const minutos = minutosDesde(pedido.criadoEm);
                       const tempo = faixaTempo(minutos);
@@ -173,24 +180,24 @@ export default function CozinhaPage() {
                       return (
                         <article
                           key={pedido.id}
-                          className={`rounded-xl border-2 bg-background p-3 ${
+                          className={`rounded-lg border-2 bg-background p-2.5 ${
                             alergia.length ? "border-red-500" : "border-border"
                           }`}
                         >
                           <div className="flex items-center justify-between gap-2">
-                            <span className="text-3xl font-bold tabular-nums">#{pedido.numero}</span>
+                            <span className="text-xl font-bold tabular-nums">#{pedido.numero}</span>
                             <span
-                              className={`flex items-center gap-1 rounded-lg px-2 py-1 text-lg font-bold tabular-nums ${tempo.classe} ${
+                              className={`flex items-center gap-1 rounded px-1.5 py-0.5 text-sm font-bold tabular-nums ${tempo.classe} ${
                                 tempo.piscar ? "animate-pulse" : ""
                               }`}
                             >
-                              <Clock className="h-5 w-5" />
-                              {minutos} min
+                              <Clock className="h-4 w-4" />
+                              {formatarEspera(minutos)}
                             </span>
                           </div>
 
-                          <div className="mt-1 flex items-center gap-2 text-sm text-muted-foreground">
-                            <Icone className="h-4 w-4" />
+                          <div className="mt-0.5 flex items-center gap-1.5 text-xs text-muted-foreground">
+                            <Icone className="h-3.5 w-3.5" />
                             {TIPO_LABEL[pedido.tipo] ?? pedido.tipo}
                             {pedido.nomeCliente || pedido.cliente?.nome ? (
                               <span className="truncate">
@@ -200,14 +207,14 @@ export default function CozinhaPage() {
                           </div>
 
                           {alterado && (
-                            <p className="mt-2 rounded bg-foreground px-2 py-1 text-center text-sm font-bold uppercase text-background">
+                            <p className="mt-1.5 rounded bg-foreground px-2 py-0.5 text-center text-xs font-bold uppercase text-background">
                               Pedido alterado
                             </p>
                           )}
 
-                          <ul className="mt-2 space-y-1">
+                          <ul className="mt-1.5 space-y-0.5">
                             {pedido.itens.map((item, i) => (
-                              <li key={i} className="flex gap-2 text-xl leading-snug">
+                              <li key={i} className="flex gap-1.5 text-base leading-snug">
                                 <span className="font-bold tabular-nums">{item.quantidade}x</span>
                                 <span>
                                   {item.produto?.nome ?? "Item"}
@@ -220,22 +227,22 @@ export default function CozinhaPage() {
                           </ul>
 
                           {alergia.length > 0 && (
-                            <p className="mt-2 flex items-start gap-2 rounded-lg bg-red-600 px-2 py-2 text-base font-bold text-white">
-                              <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0" />
+                            <p className="mt-1.5 flex items-start gap-1.5 rounded bg-red-600 px-2 py-1 text-sm font-bold text-white">
+                              <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
                               ALERGIA: {alergia.join(" · ")}
                             </p>
                           )}
 
                           {cozinha.length > 0 && (
-                            <p className="mt-2 rounded-lg bg-amber-100 px-2 py-2 text-base font-medium text-amber-900">
+                            <p className="mt-1.5 rounded bg-amber-100 px-2 py-1 text-sm font-medium text-amber-900">
                               {cozinha.join(" · ")}
                             </p>
                           )}
 
                           {coluna.proximo && (
                             <Button
-                              size="lg"
-                              className="mt-3 h-12 w-full text-base font-bold"
+                              size="sm"
+                              className="mt-2 h-9 w-full text-sm font-bold"
                               disabled={avancar.isPending}
                               onClick={() =>
                                 avancar.mutate({ id: pedido.id, status: coluna.proximo! })

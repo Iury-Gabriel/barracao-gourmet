@@ -1178,8 +1178,18 @@ export async function alterarItensPedido(
  * conta ninguem consegue fazer de cabeca olhando 20 cards.
  */
 export async function listarPedidosCozinha() {
+  // So o movimento de hoje. A casa abre e fecha no mesmo dia, entao pedido de
+  // ontem parado em "a fazer" e sobra de teste ou erro de operacao: na tela da
+  // cozinha ele so empurra o pedido real para baixo e aparece com tempo
+  // absurdo (vimos cards marcando 15 mil minutos).
+  const inicioDoDia = new Date();
+  inicioDoDia.setHours(0, 0, 0, 0);
+
   const pedidos = await prisma.pedido.findMany({
-    where: { status: { in: ['RECEBIDO', 'EM_PREPARO', 'PRONTO'] } },
+    where: {
+      status: { in: ['RECEBIDO', 'EM_PREPARO', 'PRONTO'] },
+      criadoEm: { gte: inicioDoDia },
+    },
     orderBy: { criadoEm: 'asc' },
     select: {
       id: true,
