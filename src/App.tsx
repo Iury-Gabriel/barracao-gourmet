@@ -53,6 +53,7 @@ import ConfiguracoesPage from "./pages/ConfiguracoesPage";
 import ProjecaoGestaoPage from "./pages/gestao/ProjecaoGestaoPage";
 import KpisGestaoPage from "./pages/gestao/KpisGestaoPage";
 import CuponsPage from "./pages/cupons/CuponsPage";
+import CozinhaPage from "./pages/cozinha/CozinhaPage";
 
 // WhatsApp
 import AtendimentosPage from "./pages/whatsapp/AtendimentosPage";
@@ -98,6 +99,7 @@ const App = () => (
                   <Route path="/pedidos/historico" element={<ProtectedRoute permission="aba_pedidos_historico"><HistoricoPedidosPage /></ProtectedRoute>} />
                   <Route path="/pedidos/kpis" element={<ProtectedRoute permission="aba_pedidos_kpis"><KpisPedidosPage /></ProtectedRoute>} />
                   <Route path="/pedidos/:id" element={<ProtectedRoute permission="aba_pedidos_pipeline"><PedidoDetailPage /></ProtectedRoute>} />
+                  <Route path="/cozinha" element={<ProtectedRoute permission="aba_pedidos_operacional"><CozinhaPage /></ProtectedRoute>} />
                   <Route path="/operacional" element={<ProtectedRoute permission="aba_pedidos_operacional"><OperacionalPage /></ProtectedRoute>} />
                   <Route path="/reservas" element={<ProtectedRoute permission="aba_salao_reservas"><ReservasPage /></ProtectedRoute>} />
                   <Route path="/entregador" element={<ProtectedRoute permission="aba_entregador_minhas"><EntregadorPage /></ProtectedRoute>} />

@@ -60,6 +60,12 @@ export async function atualizarPagamento(req: Request, res: Response, next: Next
   } catch (err) { next(err); }
 }
 
+export async function cozinha(_req: Request, res: Response, next: NextFunction) {
+  try {
+    res.json(await pedidosService.listarPedidosCozinha());
+  } catch (err) { next(err); }
+}
+
 export async function alterarItens(req: Request, res: Response, next: NextFunction) {
   try {
     const pedido = await pedidosService.alterarItensPedido(req.params.id, req.body?.itens);

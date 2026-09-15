@@ -8,6 +8,7 @@ router.use(authMiddleware);
 
 router.get('/kpis', pedidosController.kpis);
 router.get('/para-imprimir', pedidosController.paraImprimir);
+router.get('/cozinha', pedidosController.cozinha);
 router.get('/', pedidosController.listar);
 router.get('/:id', pedidosController.buscar);
 router.post('/', pedidosController.criar);

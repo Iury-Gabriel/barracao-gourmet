@@ -1165,3 +1165,56 @@ export async function alterarItensPedido(
 
   return atualizado;
 }
+
+/**
+ * O que a cozinha precisa ver, e so isso.
+ *
+ * Endpoint proprio porque a tela fica aberta o dia inteiro num tablet e
+ * recarrega sozinha: mandar o pedido inteiro (cliente, endereco, pagamento,
+ * dados do Mercado Pago) seria peso morto trafegando a cada poucos segundos.
+ *
+ * Alem da fila, devolve quanto falta produzir de cada prato. Numa marmitaria a
+ * cozinha monta em lote ("faltam 12 churrascos"), nao pedido a pedido, e essa
+ * conta ninguem consegue fazer de cabeca olhando 20 cards.
+ */
+export async function listarPedidosCozinha() {
+  const pedidos = await prisma.pedido.findMany({
+    where: { status: { in: ['RECEBIDO', 'EM_PREPARO', 'PRONTO'] } },
+    orderBy: { criadoEm: 'asc' },
+    select: {
+      id: true,
+      numero: true,
+      status: true,
+      tipo: true,
+      criadoEm: true,
+      alteradoEm: true,
+      observacoes: true,
+      nomeCliente: true,
+      cliente: { select: { nome: true } },
+      itens: {
+        select: {
+          quantidade: true,
+          variacaoNome: true,
+          produto: { select: { nome: true } },
+        },
+      },
+    },
+  });
+
+  // Fila de producao: so o que ainda nao esta pronto entra na conta.
+  const aProduzir = new Map<string, number>();
+  for (const pedido of pedidos) {
+    if (pedido.status === 'PRONTO') continue;
+    for (const item of pedido.itens) {
+      const nome = item.produto?.nome ?? 'Item';
+      aProduzir.set(nome, (aProduzir.get(nome) ?? 0) + item.quantidade);
+    }
+  }
+
+  return {
+    pedidos,
+    producao: Array.from(aProduzir.entries())
+      .map(([nome, quantidade]) => ({ nome, quantidade }))
+      .sort((a, b) => b.quantidade - a.quantidade),
+  };
+}

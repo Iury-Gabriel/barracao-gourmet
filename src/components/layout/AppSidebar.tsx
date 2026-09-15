@@ -9,6 +9,7 @@ import {
   Store,
   Bike,
   Ticket,
+  ChefHat,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -32,6 +33,7 @@ const pedidosItems: NavItem[] = [
   { to: "/pedidos/novo?tipo=LOCAL", label: "Venda no Balcão", icon: Store,     permission: "aba_pedidos_novo" },
   { to: "/pedidos/historico", label: "Histórico",           icon: History,       permission: "aba_pedidos_historico" },
   { to: "/operacional",       label: "Painel Operacional",  icon: Activity,      permission: "aba_pedidos_operacional" },
+  { to: "/cozinha",            label: "Cozinha (KDS)",       icon: ChefHat,       permission: "aba_pedidos_operacional" },
   { to: "/entrega",           label: "Controle de Entrega", icon: Truck,         permission: "aba_pedidos_entrega" },
   { to: "/pedidos/kpis",      label: "KPIs de Pedidos",     icon: TrendingUp,    permission: "aba_pedidos_kpis" },
   { to: "/reservas",          label: "Reservas de Mesa",    icon: CalendarDays,  permission: "aba_salao_reservas" },
