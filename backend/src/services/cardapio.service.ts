@@ -418,6 +418,7 @@ export async function listarProdutosCardapio(empresaLogada = false) {
           select: {
             id: true,
             nome: true,
+            precoAdicional: true,
             descricao: true,
             ordem: true,
             estoque: true,
@@ -620,10 +621,21 @@ export async function criarPedidoCardapio(data: {
     // Empresa logada paga a tabela dela; sem isso ela veria o preco do
     // convenio na tela e seria cobrada o do varejo.
     const produtoBaseItem = produtos.find((entry) => entry.id === item.produtoId) as any;
-    const precoAplicado =
+    const precoBase =
       empresaId && produtoBaseItem?.precoEmpresa != null
         ? Number(produtoBaseItem.precoEmpresa)
         : produto.preco;
+
+    // Variacao pode custar a mais (ex: "mais 100g de parmegiana, R$ 9,00").
+    // O valor sai do cadastro, nunca do texto da descricao: a casa escrevia o
+    // preco na descricao e ele nunca era cobrado.
+    const variacaoEscolhida = variacaoNome
+      ? (produtoBaseItem?.variacoes || []).find(
+          (v: any) => normalizarTextoObservacao(v?.nome) === normalizarTextoObservacao(variacaoNome),
+        )
+      : null;
+    const adicionalVariacao = Number(variacaoEscolhida?.precoAdicional || 0);
+    const precoAplicado = precoBase + adicionalVariacao;
     const subtotal = precoAplicado * item.quantidade;
     total += subtotal;
     acrescimoCartaoTotal += (mapaAcrescimo.get(produto.categoria) || 0) * item.quantidade;

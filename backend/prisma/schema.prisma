@@ -58,7 +58,7 @@ model Produto {
   // Prato feito na hora (marmita, prato do dia) nao tem quantidade a controlar.
   // Com false ele nunca some da venda por estoque zerado, nao entra nos alertas
   // de reposicao e nao sofre baixa quando e vendido.
-  controlaEstoque Boolean @default(true)
+  controlaEstoque Boolean @default(false)
   // Insumo (arroz, embalagem, gas) existe no estoque mas nao e vendido: com
   // false o item some do cardapio e continua no controle de estoque.
   vendavel       Boolean  @default(true)
@@ -89,6 +89,9 @@ model ProdutoVariacao {
   produtoId   String
   nome        String
   descricao   String?
+  // Quanto essa opcao soma no preco do prato. Zero = so uma escolha, sem custo
+  // (tamanho, ponto da carne); acima de zero = adicional cobrado (ex: +100g).
+  precoAdicional Float @default(0)
   ordem       Int      @default(0)
   estoque     Float    @default(0)
   estoqueMinimo Float  @default(0)

@@ -23,6 +23,7 @@ function fmt(v: number) {
 type VariacaoForm = {
   nome: string;
   descricao: string;
+  precoAdicional: string;
   estoque: string;
   estoqueMinimo: string;
 };
@@ -78,6 +79,7 @@ function toReadableError(value: unknown): string {
 const createEmptyVariacao = (): VariacaoForm => ({
   nome: "",
   descricao: "",
+  precoAdicional: "",
   estoque: "0",
   estoqueMinimo: "0",
 });
@@ -93,7 +95,7 @@ const createEmptyForm = (): ProdutoForm => ({
   custoMedio: "",
   estoqueMinimo: "5",
   unidade: "UN",
-  controlaEstoque: true,
+  controlaEstoque: false,
   vendavel: true,
   precoEmpresa: "",
   exclusivoEmpresa: false,
@@ -213,6 +215,7 @@ export default function ProdutosPage() {
       variacoes: (produto.variacoes ?? []).map((variacao: any) => ({
         nome: variacao.nome ?? "",
         descricao: variacao.descricao ?? "",
+        precoAdicional: variacao.precoAdicional ? String(variacao.precoAdicional) : "",
         estoque: String(variacao.estoque ?? 0),
         estoqueMinimo: String(variacao.estoqueMinimo ?? 0),
       })),
@@ -306,6 +309,8 @@ export default function ProdutosPage() {
         .map((variacao) => ({
           nome: variacao.nome.trim(),
           descricao: variacao.descricao.trim() || undefined,
+          // Vazio = opcao sem custo (tamanho, ponto da carne).
+          precoAdicional: variacao.precoAdicional.trim() ? Number(variacao.precoAdicional) : 0,
           estoque: Number(variacao.estoque || 0),
           estoqueMinimo: Number(variacao.estoqueMinimo || 0),
         }))
@@ -612,7 +617,7 @@ export default function ProdutosPage() {
                   <p className="text-xs text-muted-foreground">
                     {form.controlaEstoquePorVariacao
                       ? "Cada opcao tem o proprio estoque, e o total do produto e calculado automaticamente."
-                      : "Cadastre variacoes do prato, como tamanho (P, M, G) ou tipo de carne."}
+                      : "Cadastre variacoes do prato, como tamanho (P, M, G) ou tipo de carne. Preencha o valor adicional quando a opcao custar a mais (ex: mais 100g por R$ 9,00); deixe vazio quando for so uma escolha."}
                   </p>
                 </div>
                 <Button type="button" variant="outline" size="sm" onClick={adicionarVariacao}>
@@ -648,8 +653,8 @@ export default function ProdutosPage() {
                       key={index}
                       className={`items-start rounded-lg border bg-background p-3 ${
                         form.controlaEstoquePorVariacao
-                          ? "grid gap-3 lg:grid-cols-[1.15fr_1.45fr_0.8fr_0.8fr_auto]"
-                          : "grid gap-3 md:grid-cols-[1fr_1fr_auto]"
+                          ? "grid gap-3 lg:grid-cols-[1.1fr_1.3fr_0.7fr_0.7fr_0.7fr_auto]"
+                          : "grid gap-3 md:grid-cols-[1fr_1fr_0.7fr_auto]"
                       }`}
                     >
                       <div className="space-y-1">
@@ -666,6 +671,17 @@ export default function ProdutosPage() {
                           placeholder="Descricao da variacao"
                           value={variacao.descricao}
                           onChange={(e) => atualizarVariacao(index, "descricao", e.target.value)}
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <Label className="text-xs lg:sr-only">Valor adicional (R$)</Label>
+                        <Input
+                          type="number"
+                          step="0.01"
+                          min="0"
+                          placeholder="Adicional R$"
+                          value={variacao.precoAdicional}
+                          onChange={(e) => atualizarVariacao(index, "precoAdicional", e.target.value)}
                         />
                       </div>
                       {form.controlaEstoquePorVariacao && (

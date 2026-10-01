@@ -10,6 +10,7 @@ import {
 type ProdutoVariacaoInput = {
   nome: string;
   descricao?: string;
+  precoAdicional?: number;
   estoque?: number;
   estoqueMinimo?: number;
 };
@@ -29,6 +30,7 @@ function sanitizeVariacoes(variacoes?: ProdutoVariacaoInput[]) {
     .map((variacao, index) => ({
       nome: (variacao?.nome || '').trim(),
       descricao: variacao?.descricao?.trim() || null,
+      precoAdicional: toNonNegativeInt((variacao as any)?.precoAdicional),
       ordem: index,
       estoque: toNonNegativeInt(variacao?.estoque),
       estoqueMinimo: toNonNegativeInt(variacao?.estoqueMinimo),
