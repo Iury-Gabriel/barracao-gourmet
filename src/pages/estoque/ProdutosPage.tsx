@@ -569,6 +569,27 @@ export default function ProdutosPage() {
             <div className="rounded-md border bg-muted/30 p-3 space-y-2">
               <Label>Dias em que este prato sai</Label>
               <div className="flex flex-wrap gap-2">
+                {/* "Todo dia" marca os dias em que a casa abre, em vez de
+                    deixar o campo vazio. Vazio tambem significa todo dia, mas
+                    isso nao aparece na tela: a casa deixou pratos em branco
+                    achando que estava escolhendo um dia so. */}
+                <Button
+                  type="button"
+                  size="sm"
+                  variant={form.diasSemana.length === 0 || form.diasSemana.length === DIAS_SEMANA.length ? "default" : "outline"}
+                  onClick={() =>
+                    setForm((prev) => ({
+                      ...prev,
+                      diasSemana:
+                        prev.diasSemana.length === DIAS_SEMANA.length
+                          ? []
+                          : DIAS_SEMANA.map((d) => d.valor),
+                    }))
+                  }
+                >
+                  Todo dia
+                </Button>
+                <span className="self-center text-muted-foreground">|</span>
                 {DIAS_SEMANA.map((dia) => {
                   const marcado = form.diasSemana.includes(dia.valor);
                   return (
@@ -592,8 +613,12 @@ export default function ProdutosPage() {
                 })}
               </div>
               <p className="text-xs text-muted-foreground">
-                Nenhum dia marcado significa que sai todos os dias, como o churrasco. Isso nao esconde o
-                produto: serve para o atendimento saber em que dia oferecer.
+                {form.diasSemana.length === 0 || form.diasSemana.length === DIAS_SEMANA.length
+                  ? "Este prato aparece no cardapio de todos os dias."
+                  : `Aparece so ${form.diasSemana
+                      .map((d) => DIAS_SEMANA.find((x) => x.valor === d)?.label)
+                      .filter(Boolean)
+                      .join(", ")}. Nos outros dias ele some do cardapio.`}
               </p>
             </div>
 

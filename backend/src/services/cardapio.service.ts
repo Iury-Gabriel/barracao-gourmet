@@ -142,6 +142,27 @@ export function diaNumeracaoPedido(): string {
   return new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Sao_Paulo' }).format(new Date());
 }
 
+/**
+ * Dia da semana no fuso da casa (0=domingo .. 6=sabado).
+ *
+ * O servidor roda em UTC: depois das 21h aqui, la ja e o dia seguinte, e o
+ * cardapio do dia sairia trocado no fim da tarde.
+ */
+export function diaSemanaDaCasa(): number {
+  const texto = new Intl.DateTimeFormat('en-US', {
+    timeZone: 'America/Sao_Paulo',
+    weekday: 'short',
+  }).format(new Date());
+  const mapa: Record<string, number> = { Sun: 0, Mon: 1, Tue: 2, Wed: 3, Thu: 4, Fri: 5, Sat: 6 };
+  return mapa[texto] ?? new Date().getDay();
+}
+
+/** O prato sai no dia? Lista vazia significa todos os dias. */
+export function pratoSaiNoDia(diasSemana?: number[] | null, dia = diaSemanaDaCasa()): boolean {
+  if (!Array.isArray(diasSemana) || diasSemana.length === 0) return true;
+  return diasSemana.includes(dia);
+}
+
 async function proximoNumeroPedido(): Promise<{ numero: number; dia: string }> {
   const dia = diaNumeracaoPedido();
   // Reinicia sozinho na virada do dia. Feito em uma unica instrucao porque com
@@ -583,6 +604,12 @@ export async function criarPedidoCardapio(data: {
     const produto = produtoBase ? prepararProdutoCardapio(produtoBase, false) : null;
     if (!produto) throw { status: 400, message: `Produto ${item.produtoId} nao encontrado.` };
     if (!produto.disponivel) throw { status: 400, message: `Produto "${produto.nome}" nao esta disponivel.` };
+    // O cardapio mostra o dia escolhido, mas a validacao e aqui: sem isso o
+    // cliente pediria a feijoada de quarta numa segunda e a cozinha receberia
+    // um pedido que nao tem como fazer.
+    if (!pratoSaiNoDia((produtoBase as any)?.diasSemana)) {
+      throw { status: 400, message: `"${produto.nome}" nao sai hoje. Veja o cardapio de hoje.` };
+    }
     // Prato feito na hora nao tem saldo cadastrado: cobrar estoque dele
     // recusaria a venda com "Estoque insuficiente" mesmo tendo comida pronta.
     const cobraEstoque = produtoBase?.controlaEstoque !== false;

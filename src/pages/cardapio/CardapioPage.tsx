@@ -553,9 +553,39 @@ export default function CardapioPage() {
     return nomes.find((nome: string) => nome.toLowerCase().includes("bebida")) ?? null;
   }, [produtos]);
 
+  // O cardapio muda por dia da semana. Abre no dia de hoje e deixa espiar os
+  // outros, em vez de despejar a semana inteira e deixar o cliente pedir um
+  // prato que a cozinha nao faz hoje.
+  const DIAS_SEMANA = ["Domingo", "Segunda", "Terca", "Quarta", "Quinta", "Sexta", "Sabado"];
+  const diaHoje = new Date().getDay();
+  const [diaEscolhido, setDiaEscolhido] = useState(diaHoje);
+
+  const saiNoDia = (p: any, dia: number) =>
+    !Array.isArray(p?.diasSemana) || p.diasSemana.length === 0 || p.diasSemana.includes(dia);
+
+  // Dias em que a casa realmente tem prato cadastrado (nao mostra domingo se
+  // nao houver nada, por exemplo).
+  const diasDisponiveis = useMemo(() => {
+    const dias = new Set<number>();
+    for (const p of produtos as any[]) {
+      if (!p?.disponivel) continue;
+      if (!Array.isArray(p.diasSemana) || p.diasSemana.length === 0) {
+        for (let d = 0; d <= 6; d++) dias.add(d);
+      } else {
+        for (const d of p.diasSemana) dias.add(Number(d));
+      }
+    }
+    return Array.from(dias).sort((a, b) => a - b);
+  }, [produtos]);
+
+  const produtosDoDia = useMemo(
+    () => (produtos as any[]).filter((p) => saiNoDia(p, diaEscolhido)),
+    [produtos, diaEscolhido],
+  );
+
   const categoriasComImagem = useMemo(() => {
     const mapa = new Map<string, { nome: string; imagemUrl?: string; total: number }>();
-    for (const p of produtos as any[]) {
+    for (const p of produtosDoDia) {
       const cat = p.categoria || "Outros";
       if (!mapa.has(cat)) mapa.set(cat, { nome: cat, imagemUrl: undefined, total: 0 });
       const entry = mapa.get(cat)!;
@@ -568,8 +598,10 @@ export default function CardapioPage() {
       if (capa) entry.imagemUrl = capa;
     }
     return Array.from(mapa.values()).sort((a, b) => a.nome.localeCompare(b.nome, "pt-BR"));
-  }, [produtos, capaPorCategoria]);
-  const produtosFiltrados = categoriaAtiva ? (produtos as any[]).filter((p: any) => p.categoria === categoriaAtiva) : [];
+  }, [produtosDoDia, capaPorCategoria]);
+  const produtosFiltrados = categoriaAtiva
+    ? produtosDoDia.filter((p: any) => p.categoria === categoriaAtiva)
+    : [];
 
   // Com uma categoria so (o Barracao trabalha com "Pratos do Dia"), a tela de
   // escolher categoria seria um botao sozinho e nenhuma comida a vista. Entra
@@ -1851,6 +1883,43 @@ export default function CardapioPage() {
       )}
 
       <main className="max-w-5xl mx-auto px-4 py-6 pb-24">
+        {/* O cardapio muda por dia. Abre no de hoje; os outros ficam a um
+            toque, para quem quer saber o que tem amanha. */}
+        {diasDisponiveis.length > 1 && (
+          <div className="mb-4">
+            <div className="flex gap-2 overflow-x-auto pb-1">
+              {diasDisponiveis.map((dia) => {
+                const ativo = dia === diaEscolhido;
+                const ehHoje = dia === diaHoje;
+                return (
+                  <button
+                    key={dia}
+                    onClick={() => {
+                      setDiaEscolhido(dia);
+                      setCategoriaAtiva(null);
+                    }}
+                    className={`shrink-0 rounded-xl border px-3 py-2 text-sm font-medium transition ${
+                      ativo
+                        ? "border-amber-400 bg-amber-400 text-marrom-950"
+                        : "border-white/15 bg-white/5 text-white hover:bg-white/10"
+                    }`}
+                  >
+                    {ehHoje ? "Hoje" : DIAS_SEMANA[dia]}
+                  </button>
+                );
+              })}
+            </div>
+            {diaEscolhido !== diaHoje && (
+              <p className="mt-2 rounded-lg border border-amber-400/40 bg-amber-400/10 px-3 py-2 text-sm text-amber-200">
+                Voce esta vendo o cardapio de {DIAS_SEMANA[diaEscolhido]}. Para pedir agora, volte em
+                <button className="mx-1 underline" onClick={() => { setDiaEscolhido(diaHoje); setCategoriaAtiva(null); }}>
+                  Hoje
+                </button>.
+              </p>
+            )}
+          </div>
+        )}
+
         {isLoading ? (
           <div className="flex items-center justify-center h-40">
             <p className="text-marrom-300 animate-pulse">Carregando cardápio...</p>
