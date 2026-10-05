@@ -565,11 +565,7 @@ async function responderCatalogoSemAlucinacao(mensagem: string) {
     .map((produto) => mapearProdutoComEstoqueCalculado(produto, { ocultarVariacoesSemEstoque: true, recalcularDisponibilidade: true }))
     // Prato feito na hora tem estoque zero de proposito. Cobrar saldo dele aqui
     // sumia justamente com as marmitas do dia, que sao o carro-chefe.
-    .filter(
-      (produto) =>
-        produto.disponivel &&
-        ((produto as any).controlaEstoque === false || produto.estoque > 0),
-    )
+    .filter((produto) => produtoDisponivelParaVenda(produto))
     .filter((produto) => saiHoje((produto as any).diasSemana));
 
   if (!produtosDisponiveis.length) {
