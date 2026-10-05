@@ -94,7 +94,7 @@ const createEmptyForm = (): ProdutoForm => ({
   preco: "",
   estoque: "",
   custoMedio: "",
-  estoqueMinimo: "5",
+  estoqueMinimo: "0",
   unidade: "UN",
   controlaEstoque: false,
   vendavel: true,
@@ -209,7 +209,7 @@ export default function ProdutosPage() {
       precoEmpresa: produto.precoEmpresa != null ? String(produto.precoEmpresa) : "",
       exclusivoEmpresa: Boolean(produto.exclusivoEmpresa),
       promocional: Boolean(produto.promocional),
-      controlaEstoque: produto.controlaEstoque !== false,
+      controlaEstoque: produto.controlaEstoque === true,
       vendavel: produto.vendavel !== false,
       disponivel: Boolean(produto.disponivel),
       imagemUrl: produto.imagemUrl ?? "",
@@ -425,14 +425,23 @@ export default function ProdutosPage() {
                     <TableCell className="font-bold">{fmt(produto.preco)}</TableCell>
                     <TableCell className="font-medium">{fmt(produto.custoMedio ?? 0)}</TableCell>
                     <TableCell>
-                      <div className="flex items-center gap-1">
-                        {produto.estoque <= produto.estoqueMinimo && <AlertTriangle className="h-4 w-4 text-amber-500" />}
-                        <span className={produto.estoque <= produto.estoqueMinimo ? "font-bold text-amber-600" : ""}>
-                          {produto.estoque}
-                        </span>
-                      </div>
+                      {/* Item feito na hora vive com saldo zero. Mostrar "0" com o
+                          triangulo deixava a tela inteira em alerta de reposicao
+                          de comida que nao se repoe. */}
+                      {produto.controlaEstoque === true ? (
+                        <div className="flex items-center gap-1">
+                          {produto.estoque <= produto.estoqueMinimo && <AlertTriangle className="h-4 w-4 text-amber-500" />}
+                          <span className={produto.estoque <= produto.estoqueMinimo ? "font-bold text-amber-600" : ""}>
+                            {produto.estoque}
+                          </span>
+                        </div>
+                      ) : (
+                        <span className="text-xs text-muted-foreground">Feito na hora</span>
+                      )}
                     </TableCell>
-                    <TableCell className="text-muted-foreground">{produto.estoqueMinimo}</TableCell>
+                    <TableCell className="text-muted-foreground">
+                      {produto.controlaEstoque === true ? produto.estoqueMinimo : "-"}
+                    </TableCell>
                     <TableCell className="font-medium">{fmt((produto.custoMedio ?? 0) * produto.estoque)}</TableCell>
                     <TableCell>
                       <Badge variant={produto.disponivel ? "default" : "secondary"}>{produto.disponivel ? "Sim" : "Nao"}</Badge>
