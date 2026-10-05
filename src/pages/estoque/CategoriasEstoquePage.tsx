@@ -190,10 +190,25 @@ export default function CategoriasEstoquePage() {
 
   const confirmarExclusaoCategoria = (nomeCategoriaAtual: string) => {
     const categoria = categoriasPorNome.get(nomeCategoriaAtual);
-    if (!categoria?.id) {
-      toast.error("Essa categoria ainda nao foi cadastrada formalmente.");
+    const produtosDaCategoria =
+      categoriasComProdutos.find(([nome]) => nome === nomeCategoriaAtual)?.[1] ?? [];
+
+    // Categoria com comida dentro nao sai. O jeito de esvaziar e mudar os
+    // produtos de categoria, e ai ela some da lista sozinha.
+    if (produtosDaCategoria.length > 0) {
+      toast.error(
+        `"${nomeCategoriaAtual}" ainda tem ${produtosDaCategoria.length} produto(s) dentro. ` +
+          "Mude esses produtos para outra categoria e ela some da lista.",
+      );
       return;
     }
+
+    // Sem produtos e sem cadastro proprio, ela ja nao existe: so a lista esta velha.
+    if (!categoria?.id) {
+      toast.error("Essa categoria ja esta vazia. Atualize a pagina que ela sai da lista.");
+      return;
+    }
+
     const ok = window.confirm(`Excluir a categoria "${nomeCategoriaAtual}"?`);
     if (!ok) return;
     excluirCategoria.mutate(categoria.id);

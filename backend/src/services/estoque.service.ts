@@ -275,6 +275,19 @@ export async function excluirProduto(id: string) {
   const produto = await prisma.produto.findUnique({ where: { id } });
   if (!produto) throw { status: 404, message: 'Produto nao encontrado.' };
 
+  // Produto ja vendido nao se apaga: o pedido antigo aponta para ele, e apagar
+  // o produto apagava o pedido e o dinheiro daquele dia junto. Para tirar do
+  // cardapio existe o "disponivel".
+  const vendas = await prisma.itemPedido.count({ where: { produtoId: id } });
+  if (vendas > 0) {
+    throw {
+      status: 400,
+      message:
+        `"${produto.nome}" ja foi vendido em ${vendas} pedido(s), entao nao da para apagar sem apagar essas vendas. ` +
+        'Para tirar do cardapio, marque como indisponivel.',
+    };
+  }
+
   await excluirDadosRelacionadosAProdutos([id]);
 }
 
@@ -495,16 +508,35 @@ export async function atualizarCategoria(
   return categoriaAtualizada;
 }
 
+/**
+ * Categoria e etiqueta, nao e dono da comida. Antes, apagar uma categoria
+ * levava junto todos os produtos dela, todos os pedidos que um dia tiveram
+ * esses produtos e os lancamentos financeiros desses pedidos: um clique
+ * apagava o cardapio e o faturamento do mes, sem aviso.
+ *
+ * Agora a categoria so sai quando esta vazia. Com produto dentro, a casa
+ * move os produtos primeiro e decide o que fazer com cada um.
+ */
 export async function excluirCategoria(id: string) {
   const categoria = await prisma.categoriaEstoque.findUnique({ where: { id } });
   if (!categoria) throw { status: 404, message: 'Categoria nao encontrada.' };
 
   const produtosDaCategoria = await prisma.produto.findMany({
     where: { categoria: categoria.nome },
-    select: { id: true },
+    select: { nome: true },
+    orderBy: { nome: 'asc' },
   });
 
-  await excluirDadosRelacionadosAProdutos(produtosDaCategoria.map((produto) => produto.id));
+  if (produtosDaCategoria.length > 0) {
+    const exemplos = produtosDaCategoria.slice(0, 3).map((produto) => produto.nome).join(', ');
+    const resto = produtosDaCategoria.length > 3 ? ` e mais ${produtosDaCategoria.length - 3}` : '';
+    throw {
+      status: 400,
+      message:
+        `A categoria "${categoria.nome}" ainda tem ${produtosDaCategoria.length} produto(s): ${exemplos}${resto}. ` +
+        'Mude esses produtos de categoria (ou exclua um por um) e a categoria sai sozinha.',
+    };
+  }
 
   await prisma.categoriaEstoque.delete({ where: { id } });
 }
