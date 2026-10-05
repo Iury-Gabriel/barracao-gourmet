@@ -51,7 +51,7 @@ export default function ClientesPage() {
   const abrirCriar = () => { setEditando(null); setForm(emptyForm); setModalOpen(true); };
   const abrirEditar = (c: any) => {
     setEditando(c);
-    setForm({ nome: c.nome, telefone: c.telefone ?? "", email: c.email ?? "", endereco: c.endereco ?? "", bairro: c.bairro ?? "", cidade: c.cidade ?? "São Paulo", observacoes: c.observacoes ?? "", entregaGratis: Boolean(c.entregaGratis) , tipoEndereco: c.tipoEndereco ?? "RESIDENCIAL", cep: c.cep ?? ""});
+    setForm({ nome: c.nome, telefone: c.telefone ?? "", email: c.email ?? "", endereco: c.endereco ?? "", bairro: c.bairro ?? "", cidade: c.cidade ?? "São Paulo", observacoes: c.observacoes ?? "", entregaGratis: Boolean(c.entregaGratis) , tipoEndereco: c.tipoEndereco ?? "RESIDENCIAL", senha: "", cep: c.cep ?? ""});
     setModalOpen(true);
   };
   const fecharModal = () => { setModalOpen(false); setEditando(null); setForm(emptyForm); };

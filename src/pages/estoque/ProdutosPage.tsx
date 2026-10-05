@@ -64,7 +64,8 @@ type ProdutoForm = {
 function toReadableError(value: unknown): string {
   if (value instanceof Error) {
     const lines = [`Tipo: ${value.name}`, `Mensagem: ${value.message}`];
-    if (value.cause) lines.push(`Cause: ${String(value.cause)}`);
+    const causa = (value as Error & { cause?: unknown }).cause;
+    if (causa) lines.push(`Cause: ${String(causa)}`);
     if (value.stack) lines.push(`Stack: ${value.stack}`);
     return lines.join("\n");
   }

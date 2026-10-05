@@ -4,6 +4,7 @@ import {
   calcularEstoqueTotalVariacoes,
   encontrarVariacaoPorNome,
   mapearProdutoComEstoqueCalculado,
+  produtoControlaEstoque,
   produtoControlaEstoquePorVariacao,
 } from '../lib/produtoEstoque';
 
@@ -144,7 +145,7 @@ export async function listarProdutos(filtros: { categoria?: string; disponivel?:
     // entupiria a tela de alertas com reposicao que nao existe.
     return produtosComEstoque.filter(
       (produto) =>
-        produto.controlaEstoque !== false &&
+        produtoControlaEstoque(produto) &&
         Number(produto.estoque || 0) <= Number(produto.estoqueMinimo || 0)
     );
   }

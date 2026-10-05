@@ -10,7 +10,7 @@ interface MessageBubbleProps {
 
 function detectImageUrls(text: string): string[] {
   if (!text) return [];
-  const urls = text.match(/https?:\/\/[^\s)]+/gi) || [];
+  const urls: string[] = text.match(/https?:\/\/[^\s)]+/gi) || [];
   return urls.filter((url) => {
     const lower = url.toLowerCase();
     return (
@@ -26,7 +26,7 @@ function detectImageUrls(text: string): string[] {
 
 function detectAudioUrls(text: string): string[] {
   if (!text) return [];
-  const urls = text.match(/https?:\/\/[^\s)]+/gi) || [];
+  const urls: string[] = text.match(/https?:\/\/[^\s)]+/gi) || [];
   return urls.filter((url) => {
     const lower = url.toLowerCase();
     return (

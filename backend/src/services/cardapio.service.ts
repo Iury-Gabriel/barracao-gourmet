@@ -15,6 +15,7 @@ import {
   encontrarVariacaoPorNome,
   mapearProdutoComEstoqueCalculado,
   produtoControlaEstoquePorVariacao,
+  produtoDisponivelParaVenda,
 } from '../lib/produtoEstoque';
 import {
   buscarCustomerMercadoPago,
@@ -434,6 +435,7 @@ export async function listarProdutosCardapio(empresaLogada = false) {
         promocional: true,
         imagemUrl: true,
         disponivel: true,
+        controlaEstoque: true,
         estoque: true,
         variacoes: {
           select: {
@@ -454,7 +456,7 @@ export async function listarProdutosCardapio(empresaLogada = false) {
   return ordenarProdutosPorPedidos(
     produtos
       .map((produto) => prepararProdutoCardapio(produto, true))
-      .filter((produto) => produto.disponivel && produto.estoque > 0)
+      .filter((produto) => produtoDisponivelParaVenda(produto))
       .map((produto) => ({
         ...produto,
         acrescimoCartaoCategoria: mapaAcrescimo.get(produto.categoria) || 0,
@@ -490,11 +492,13 @@ export async function listarTodosProdutosCardapio(empresaLogada = false) {
         promocional: true,
         imagemUrl: true,
         disponivel: true,
+        controlaEstoque: true,
         estoque: true,
         variacoes: {
           select: {
             id: true,
             nome: true,
+            precoAdicional: true,
             descricao: true,
             ordem: true,
             estoque: true,

@@ -892,7 +892,7 @@ export default function CardapioPage() {
 
   const adicionarItem = (produto: any, variacaoNome?: string) => {
     // Mesma regra do selo: so bloqueia por saldo quem controla estoque.
-    if (!produto.disponivel || (produto.controlaEstoque !== false && produto.estoque === 0)) return;
+    if (!produto.disponivel || (produto.controlaEstoque === true && produto.estoque <= 0)) return;
 
     const variacoes = Array.isArray(produto.variacoes) ? produto.variacoes : [];
     if (variacoes.length > 0 && !variacaoNome) {
@@ -968,7 +968,6 @@ export default function CardapioPage() {
 
       const res = await fetch(`${API_URL}/api/cardapio/pedido`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
         // Sem o token aqui o servidor trata como visita comum e cobra o preco
         // do varejo, mesmo com a empresa logada na tela.
         headers: empresa?.token
@@ -1956,8 +1955,8 @@ export default function CardapioPage() {
             {produtosFiltrados.map((produto: any) => {
               // Item que nao controla estoque nunca esgota: ele vive com saldo
               // zero porque e feito na hora.
-              const controlaEstoque = produto.controlaEstoque !== false;
-              const esgotado = !produto.disponivel || (controlaEstoque && produto.estoque === 0);
+              const controlaEstoque = produto.controlaEstoque === true;
+              const esgotado = !produto.disponivel || (controlaEstoque && produto.estoque <= 0);
               const qtd = qtdNoCarrinho(produto.id);
               const temVariacoes = Array.isArray(produto.variacoes) && produto.variacoes.length > 0;
               const itemSemVariacaoKey = `${produto.id}::sem-variacao`;

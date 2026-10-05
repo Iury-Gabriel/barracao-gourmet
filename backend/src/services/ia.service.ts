@@ -9,6 +9,7 @@ import {
   encontrarVariacaoPorNome,
   mapearProdutoComEstoqueCalculado,
   produtoControlaEstoquePorVariacao,
+  produtoDisponivelParaVenda,
 } from '../lib/produtoEstoque';
 import { buscarEnderecoPorCep, buscarPedidoCardapio, calcularFreteCardapio, criarPedidoCardapio } from './cardapio.service';
 import { LIMITE_KM_ENTREGA } from '../lib/frete';
@@ -1083,6 +1084,7 @@ function criarToolsAtendimento(
           diasSemana: true,
           preco: true,
           estoque: true,
+          controlaEstoque: true,
           disponivel: true,
           imagemUrl: true,
           variacoes: {
@@ -1099,7 +1101,7 @@ function criarToolsAtendimento(
 
       const produtosDisponiveis = produtos
         .map((produto) => mapearProdutoComEstoqueCalculado(produto, { ocultarVariacoesSemEstoque: true, recalcularDisponibilidade: true }))
-        .filter((produto) => (apenasDisponiveis !== false ? produto.disponivel && produto.estoque > 0 : true));
+        .filter((produto) => (apenasDisponiveis !== false ? produtoDisponivelParaVenda(produto) : true));
 
       const produtosFiltrados = (textoBusca || categoria)
         ? ranquearProdutosPorBusca(produtosDisponiveis, textoBusca, tokensBusca).map((item) => item.produto as typeof produtosDisponiveis[number])
@@ -1114,7 +1116,7 @@ function criarToolsAtendimento(
         preco: p.preco,
         precoFormatado: formatBRL(p.preco),
         estoque: p.estoque,
-        disponivel: p.disponivel && p.estoque > 0,
+        disponivel: produtoDisponivelParaVenda(p),
         imagemUrl: normalizeImageUrl(p.imagemUrl),
         sabores: Array.isArray(p.variacoes) ? p.variacoes.map((variacao) => variacao.nome).filter(Boolean) : [],
         diasSemana: descreverDiasSemana((p as any).diasSemana),
@@ -1155,6 +1157,7 @@ function criarToolsAtendimento(
             diasSemana: true,
             preco: true,
             estoque: true,
+            controlaEstoque: true,
             disponivel: true,
             imagemUrl: true,
             variacoes: {
@@ -1186,6 +1189,7 @@ function criarToolsAtendimento(
             diasSemana: true,
             preco: true,
             estoque: true,
+            controlaEstoque: true,
             disponivel: true,
             imagemUrl: true,
             variacoes: {
@@ -1196,7 +1200,7 @@ function criarToolsAtendimento(
         });
         const matchesDisponiveis = matches
           .map((entry) => mapearProdutoComEstoqueCalculado(entry, { ocultarVariacoesSemEstoque: true, recalcularDisponibilidade: true }))
-          .filter((entry) => entry.disponivel && entry.estoque > 0);
+          .filter((entry) => produtoDisponivelParaVenda(entry));
         const { produto: melhorProduto, opcoes } = resolverMelhorProdutoPorNome(matchesDisponiveis, nome);
 
         if (!melhorProduto && opcoes.length === 0) {
@@ -1244,7 +1248,7 @@ function criarToolsAtendimento(
         preco: produto.preco,
         precoFormatado: formatBRL(produto.preco),
         estoque: produto.estoque,
-        disponivel: produto.disponivel && produto.estoque > 0,
+        disponivel: produtoDisponivelParaVenda(produto),
         sabores: Array.isArray(produto.variacoes) ? produto.variacoes.map((variacao: any) => variacao.nome).filter(Boolean) : [],
         diasSemana: descreverDiasSemana((produto as any).diasSemana),
         saiHoje: saiHoje((produto as any).diasSemana),
@@ -1297,6 +1301,7 @@ function criarToolsAtendimento(
               diasSemana: true,
               preco: true,
               estoque: true,
+              controlaEstoque: true,
               disponivel: true,
               imagemUrl: true,
               variacoes: {
@@ -1326,6 +1331,7 @@ function criarToolsAtendimento(
               diasSemana: true,
               preco: true,
               estoque: true,
+              controlaEstoque: true,
               disponivel: true,
               imagemUrl: true,
               variacoes: {
@@ -1336,7 +1342,7 @@ function criarToolsAtendimento(
           });
           const matchesDisponiveis = matches
             .map((entry) => mapearProdutoComEstoqueCalculado(entry, { ocultarVariacoesSemEstoque: true, recalcularDisponibilidade: true }))
-            .filter((entry) => entry.disponivel && entry.estoque > 0);
+            .filter((entry) => produtoDisponivelParaVenda(entry));
 
           const { produto: melhorProduto, opcoes } = resolverMelhorProdutoPorNome(matchesDisponiveis, String(item.produtoNome));
 
@@ -1599,6 +1605,7 @@ function criarToolsAtendimento(
               diasSemana: true,
               preco: true,
               estoque: true,
+              controlaEstoque: true,
               disponivel: true,
               imagemUrl: true,
               variacoes: {
@@ -1609,7 +1616,7 @@ function criarToolsAtendimento(
           });
           const matchesDisponiveis = matches
             .map((entry) => mapearProdutoComEstoqueCalculado(entry, { ocultarVariacoesSemEstoque: true, recalcularDisponibilidade: true }))
-            .filter((entry) => entry.disponivel && entry.estoque > 0);
+            .filter((entry) => produtoDisponivelParaVenda(entry));
 
           const { produto: melhorProduto, opcoes } = resolverMelhorProdutoPorNome(matchesDisponiveis, produtoNome);
 
@@ -1639,6 +1646,7 @@ function criarToolsAtendimento(
             controlaEstoquePorVariacao: true,
             diasSemana: true,
             disponivel: true,
+            controlaEstoque: true,
             estoque: true,
             variacoes: {
               select: { id: true, nome: true, descricao: true, estoque: true, estoqueMinimo: true },
