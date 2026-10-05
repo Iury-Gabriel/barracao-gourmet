@@ -73,9 +73,13 @@ export function mapearProdutoComEstoqueCalculado<T extends ProdutoComEstoque>(
   return {
     ...produto,
     estoque: estoqueCalculado,
-    disponivel: options?.recalcularDisponibilidade
-      ? Boolean(produto?.disponivel !== false && estoqueCalculado > 0)
-      : produto?.disponivel,
+    // Prato feito na hora tem estoque zero de proposito. Cobrar saldo dele aqui
+    // marcava o cardapio inteiro como esgotado: a casa cadastrou tudo sem
+    // quantidade, como e o certo, e nada aparecia para vender.
+    disponivel:
+      options?.recalcularDisponibilidade && (produto as any)?.controlaEstoque !== false
+        ? Boolean(produto?.disponivel !== false && estoqueCalculado > 0)
+        : produto?.disponivel,
     variacoes,
   };
 }

@@ -891,7 +891,8 @@ export default function CardapioPage() {
   const qtdItemNoCarrinho = (itemKey: string) => carrinho.find((item) => item.itemKey === itemKey)?.quantidade || 0;
 
   const adicionarItem = (produto: any, variacaoNome?: string) => {
-    if (produto.estoque === 0 || !produto.disponivel) return;
+    // Mesma regra do selo: so bloqueia por saldo quem controla estoque.
+    if (!produto.disponivel || (produto.controlaEstoque !== false && produto.estoque === 0)) return;
 
     const variacoes = Array.isArray(produto.variacoes) ? produto.variacoes : [];
     if (variacoes.length > 0 && !variacaoNome) {
@@ -1953,7 +1954,10 @@ export default function CardapioPage() {
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {produtosFiltrados.map((produto: any) => {
-              const esgotado = produto.estoque === 0 || !produto.disponivel;
+              // Item que nao controla estoque nunca esgota: ele vive com saldo
+              // zero porque e feito na hora.
+              const controlaEstoque = produto.controlaEstoque !== false;
+              const esgotado = !produto.disponivel || (controlaEstoque && produto.estoque === 0);
               const qtd = qtdNoCarrinho(produto.id);
               const temVariacoes = Array.isArray(produto.variacoes) && produto.variacoes.length > 0;
               const itemSemVariacaoKey = `${produto.id}::sem-variacao`;

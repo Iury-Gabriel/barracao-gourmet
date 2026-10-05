@@ -93,7 +93,10 @@ export default function NovoPedidoPage() {
   const clientes = clientesData ?? [];
 
   const produtosFiltrados = produtos.filter((produto) =>
-    produto.nome.toLowerCase().includes(busca.toLowerCase()) && produto.estoque > 0,
+    // Sem a checagem de controlaEstoque, o prato do dia (saldo zero de
+    // proposito) sumia da busca e a venda no balcao nao conseguia lanca-lo.
+    produto.nome.toLowerCase().includes(busca.toLowerCase()) &&
+    (produto.controlaEstoque === false || produto.estoque > 0),
   );
 
   const mapaCategoria = useMemo(
