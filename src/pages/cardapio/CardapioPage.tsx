@@ -902,6 +902,11 @@ export default function CardapioPage() {
       return;
     }
 
+    // O servidor soma o adicional da variacao ao fechar o pedido. Sem a mesma
+    // conta aqui, a tela mostrava um total menor do que o cobrado.
+    const variacaoEscolhida = variacoes.find((v: any) => v?.nome === variacaoNome);
+    const precoComAdicional = Number(produto.preco || 0) + Number(variacaoEscolhida?.precoAdicional || 0);
+
     const itemKey = `${produto.id}::${variacaoNome || "sem-variacao"}`;
     const estoqueDisponivel = obterEstoqueDisponivel(produto, variacaoNome);
     if (qtdItemNoCarrinho(itemKey) >= estoqueDisponivel) {
@@ -920,7 +925,7 @@ export default function CardapioPage() {
           produtoId: produto.id,
           nome: produto.nome,
           variacaoNome: variacaoNome || undefined,
-          preco: produto.preco,
+          preco: precoComAdicional,
           quantidade: 1,
           imagemUrl: produto.imagemUrl,
         },
@@ -2114,7 +2119,14 @@ export default function CardapioPage() {
                       : "border-marrom-700 bg-marrom-900 text-marrom-200 hover:border-marrom-500"
                   }`}
                 >
-                  <p className="text-sm font-medium">{variacao.nome}</p>
+                  <div className="flex items-baseline justify-between gap-2">
+                    <p className="text-sm font-medium">{variacao.nome}</p>
+                    {Number(variacao.precoAdicional || 0) > 0 && (
+                      <span className="shrink-0 text-sm font-semibold text-vermelho-400">
+                        + {fmt(Number(variacao.precoAdicional))}
+                      </span>
+                    )}
+                  </div>
                   {variacao.descricao && <p className="text-xs text-marrom-300">{variacao.descricao}</p>}
                   {produtoSelecionandoVariacao?.controlaEstoquePorVariacao && (
                     <p className="text-xs text-marrom-500">Estoque: {variacao.estoque ?? 0}</p>
